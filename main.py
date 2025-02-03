@@ -156,7 +156,7 @@ class Window(Engine):
             if (int(abs(self.force)) <= 2.5 and self.force < RESISTANCE) or abs(self.force) > 100 * 0.8 :
                 dir = "default"
 
-            boundary_values = BOUNDARY_KEYS["left_wind"]
+            boundary_values = BOUNDARY_KEYS[dir]
 
             for x in range(world_boundary_x[boundary_values[0]], world_boundary_x[boundary_values[1]], boundary_values[2]):
                 for y in range(world_boundary_y[boundary_values[0]], world_boundary_y[boundary_values[1]], boundary_values[2]):
