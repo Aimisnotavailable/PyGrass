@@ -5,7 +5,7 @@ import math
 from scripts.engine import Engine
 from scripts.camera import Follow
 
-GRASS_WIDTH = 8
+GRASS_WIDTH = 6
 LIGHT_LEVELS = 8
 MAX_ROT = 70
 
@@ -19,25 +19,22 @@ class Grass:
         self.height = height
 
         self.direction = random.choice([1, -1])
-        self.main_leaf_points = [[GRASS_WIDTH // 5, self.height * 0.6], [GRASS_WIDTH // 2, 0], [GRASS_WIDTH * 0.8, self.height * 0.6], [GRASS_WIDTH // 3, self.height * 1]]
-        self.stem_points = [[GRASS_WIDTH // 5, self.height * 0.6], [GRASS_WIDTH // 3, self.height * 1], [GRASS_WIDTH * 0.8, self.height * 0.6]]
-        self.flower_points = [[GRASS_WIDTH // 5, self.height * 0.4], [GRASS_WIDTH // 2, 0], [GRASS_WIDTH * 0.8, self.height * 0.4]]
+        self.main_leaf_points = [[GRASS_WIDTH // 8, self.height * 0.6], [GRASS_WIDTH // 2, 0], [GRASS_WIDTH * 0.8, self.height * 0.6], [GRASS_WIDTH // 3, self.height]]
 
         self.img = pygame.Surface((GRASS_WIDTH, self.height), pygame.SRCALPHA)
-        self.angle = 0
-        # self.img = pygame.transform.rotate(self.img, self.angle)
         self.touch_force = 0
 
-        self.img.fill((0, 0, 0, 0))
-        pygame.draw.polygon(self.img, color, self.main_leaf_points)
-        pygame.draw.polygon(self.img, (0, 120, 0), self.stem_points)
-
         self.total_force = 0
-        if flower:
-            pygame.draw.polygon(self.img, (255, 255, 0), self.flower_points)
 
-        # for points in self.main_leaf_points:
-        #     pygame.draw.circle(self.img, (255, 255, 255), points, 1)
+        self.flower = False
+
+        if flower:
+            self.flower = True
+            self.flower_color = (255, 255, 0)
+
+        self.color = color
+        self.shadow_color = (0, 255 * 0.4, 0)
+
 
     def set_touch_force(self, dir):
         self.touch_force = 200 if dir == "left" else -200
@@ -46,32 +43,35 @@ class Grass:
         return pygame.Rect(*self.pos, *self.img.get_size())
     
     def update(self, dt, force=0):
-        
-        self.total_force  = force * dt + self.touch_force * dt
+        self.total_force = (force + self.touch_force) * dt
 
         if self.total_force > 0:
-            self.angle = min(MAX_ROT, self.angle + self.total_force)
+            self.main_leaf_points[1][0] = min(GRASS_WIDTH, self.total_force + self.main_leaf_points[1][0])
+            self.main_leaf_points[-1][0] = max(0, self.main_leaf_points[-1][0] - self.total_force)
         else:
-            self.angle = max(-MAX_ROT, self.angle + self.total_force)
+            self.main_leaf_points[1][0] = max(0, self.total_force + self.main_leaf_points[1][0])
+            self.main_leaf_points[-1][0] = min(GRASS_WIDTH, self.main_leaf_points[-1][0] - self.total_force)
 
         if self.touch_force > 0:
-            self.touch_force = max(0, self.touch_force - 400 * dt)
+            self.touch_force = max(0, self.touch_force - (50 * self.touch_force * dt))
         else:
-            self.touch_force = min(self.touch_force + 400 * dt, 0)
-
-        if self.total_force > 0:
-            self.angle = max(0, self.angle - RESISTANCE * dt)
-        elif self.total_force < 0:
-            self.angle = min(0, self.angle + RESISTANCE * dt)
+            self.touch_force = min(0, self.touch_force - (50 * self.touch_force * dt))
         
         
     def render(self, color, surf : pygame.Surface, render_scroll=(0, 0)):
 
-        img = pygame.transform.rotate(self.img, self.angle)
+        self.img.fill((0, 0, 0, 0))
 
-        img_rect = img.get_rect(center=(self.pos[0] + math.cos(math.radians(self.angle)) * 1 - render_scroll[0], self.pos[1] + math.sin(math.radians(self.angle)) * 1 - render_scroll[1]))
+        stem_points = [self.main_leaf_points[0], self.main_leaf_points[3], self.main_leaf_points[2]]
 
-        surf.blit(img, img_rect)
+        pygame.draw.polygon(self.img, self.color if int(abs(self.touch_force)) == 0 else self.shadow_color, self.main_leaf_points)
+        pygame.draw.polygon(self.img, (self.color[0] * 0.7, self.color[1] * 0.7, self.color[2] * 0.7), stem_points)
+
+        if self.flower:
+            flower_points = [self.main_leaf_points[0], self.main_leaf_points[1], self.main_leaf_points[2]]
+            pygame.draw.polygon(self.img, self.flower_color, flower_points)
+
+        surf.blit(self.img, (self.pos[0] - render_scroll[0], self.pos[1] - render_scroll[1]))
 
 class Window(Engine): 
 
@@ -92,6 +92,7 @@ class Window(Engine):
         self.mouse_offset = [0, 0]
 
         self.mouse_surf = pygame.Surface((40, 40))
+        self.flip = 1
 
     def run(self):
         while True:
@@ -118,7 +119,8 @@ class Window(Engine):
             m_rect = self.mouse_surf.get_rect(center=[mpos[0] + render_scroll[0], mpos[1] + render_scroll[1]])
 
             if not int(self.force):
-                self.force = random.choice([100, -100])
+                self.flip *= -1
+                self.force = 10 * self.flip
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -151,12 +153,7 @@ class Window(Engine):
 
             grass_nearby = []
 
-            dir = "right_wind" if self.force < 0 else "left_wind"
-            
-            if (int(abs(self.force)) <= 2.5 and self.force < RESISTANCE) or abs(self.force) > 100 * 0.8 :
-                dir = "default"
-
-            boundary_values = BOUNDARY_KEYS[dir]
+            boundary_values = BOUNDARY_KEYS["default"]
 
             for x in range(world_boundary_x[boundary_values[0]], world_boundary_x[boundary_values[1]], boundary_values[2]):
                 for y in range(world_boundary_y[boundary_values[0]], world_boundary_y[boundary_values[1]], boundary_values[2]):
@@ -182,9 +179,9 @@ class Window(Engine):
                         
                         if m_rect.colliderect(grass_rect):
                             if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
-                                dir = 'right'
-                            else:
                                 dir = 'left'
+                            else:
+                                dir = 'right'
 
                             grass.set_touch_force(dir=dir)
 
@@ -199,6 +196,8 @@ class Window(Engine):
                 self.force = min(0, self.force - (self.force * dt))
 
             
+            print(self.force)
+
             pygame.draw.circle(self.display, (255, 255, 255), (m_rect.center[0] - render_scroll[0], m_rect.center[1] - render_scroll[1]) , 20, 1)
 
             display_mask = pygame.mask.from_surface(self.display)
