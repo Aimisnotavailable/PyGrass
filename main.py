@@ -8,6 +8,7 @@ from scripts.camera import Follow
 GRASS_WIDTH = 6
 LIGHT_LEVELS = 8
 MAX_ROT = 40
+DIR = {'left' : -1, 'right' : 1}
 
 RESISTANCE = 20
 
@@ -52,30 +53,53 @@ class Grass:
     def set_render_img(self):
         self.render_img = self.img_touch
 
-    def set_touch_force(self, dir):
-        self.touch_force = -200 if dir == "left" else 200
-
     def rect(self):
         return pygame.Rect(*self.pos, *self.img.get_size())
     
-    def update(self, dt, force=0):
+    def update(self, dt = 0, wind_force = 10):
         self.render_img = self.img
-        self.total_force = (force + self.touch_force) * dt
-        if self.total_force > 0:
-            self.current_rot = min(MAX_ROT, self.current_rot + self.total_force)
-        else:
-            self.current_rot = max(-MAX_ROT, self.current_rot + self.total_force)
         
-        if self.touch_force > 0:
-            self.touch_force = max(0, int(self.touch_force - self.touch_force * 10 * dt))
+        if wind_force > 0:
+            self.current_rot = min(MAX_ROT, self.current_rot + wind_force * dt)
         else:
-            self.touch_force = min(0, int(self.touch_force - self.touch_force * 10 * dt))
+            self.current_rot = max(-MAX_ROT, self.current_rot + wind_force * dt)
 
+        if wind_force == 0:
+            if self.current_rot > 0 :
+                self.current_rot = max(0, self.current_rot - MAX_ROT * 2 * dt)
+            else:
+                self.current_rot = min(0, self.current_rot + MAX_ROT * 2 * dt)
+
+    def set_touch_rot(self, dir, dt):
+        if dir == "left":
+            self.current_rot = self.current_rot = min(MAX_ROT, self.current_rot + MAX_ROT * 5 * dt)
+        elif dir == "right":
+            self.current_rot = self.current_rot = max(-MAX_ROT, self.current_rot - MAX_ROT * 5 * dt)
+        
     def render(self, color, surf : pygame.Surface, render_scroll=(0, 0)):
         img = pygame.transform.rotate(self.render_img, self.current_rot)
         img_rect = img.get_rect(center=(self.pos[0] + math.cos(math.radians(self.current_rot)), self.pos[1] + math.sin(math.radians(self.current_rot))))
         surf.blit(img, (img_rect[0] - render_scroll[0], img_rect[1] - render_scroll[1]))
 
+class Wind:
+
+    def __init__(self, length = 10, x_pos = 0, speed = 200, dir="left"):
+        self.length = length
+        self.x_pos = x_pos
+        self.dir = dir
+        self.speed = speed
+        self.max_travel = x_pos
+
+    def update(self, dt, render_scroll = (0, 0)):
+        if self.x_pos < (render_scroll[0] - self.length * 2 * GRASS_WIDTH):
+            self.dir = "right"
+        elif self.x_pos > (render_scroll[0] + self.max_travel + self.length * GRASS_WIDTH):
+            self.dir = "left"
+        self.x_pos += self.speed * dt * DIR[self.dir]
+
+    def render(self, surf, render_scroll= (0, 0)):
+        pygame.draw.rect(surf, (255, 255, 255), (self.x_pos - render_scroll[0], 0, self.length * GRASS_WIDTH, GRASS_WIDTH))
+        
 class Window(Engine): 
 
     def __init__(self):
@@ -96,6 +120,8 @@ class Window(Engine):
 
         self.mouse_surf = pygame.Surface((40, 40))
         self.flip = 1
+
+        self.wind = Wind(x_pos=self.display.get_width())
 
     def run(self):
         while True:
@@ -147,44 +173,45 @@ class Window(Engine):
             world_boundary_y = [render_scroll[1] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[1] + self.display.get_height()) // GRASS_WIDTH + GRASS_WIDTH]
             world_size = [world_boundary_x[1] - world_boundary_x[0], world_boundary_y[1] - world_boundary_y[0]]
 
-            grass_nearby = []
-
-            boundary_values = BOUNDARY_KEYS["default"]
-
             if self.insert:
                 pos = m_rect.center
                 g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
                 
                 if g_pos not in self.grass:
-                    self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(190, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(20, 30)) 
+                    self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(120, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(15, 30)) 
 
-            for x in range(world_boundary_x[boundary_values[0]], world_boundary_x[boundary_values[1]], boundary_values[2]):
-                for y in range(world_boundary_y[boundary_values[0]], world_boundary_y[boundary_values[1]], boundary_values[2]):
+            self.wind.update(dt, render_scroll)
+            self.wind.render(self.display, render_scroll)
+
+            for x in range(world_boundary_x[0], world_boundary_x[1]):
+                for y in range(world_boundary_y[0], world_boundary_y[1]):
                     g_pos = f"{x} ; {y}"
+                    
                     if g_pos in self.grass:
-
                         grass : Grass = self.grass[g_pos]
-                        
-                        grass_nearby.append(grass)
-                        saturation = abs((world_boundary_y[0] - y) / (world_size[1] / LIGHT_LEVELS)) / LIGHT_LEVELS
-
-                        if saturation < 0.5:
-                            saturation = 1 - saturation
                         grass_rect = grass.rect()
-                        grass.update(dt, self.force)
+                        wind_force = 0
+
+                        if self.wind.dir == "left":
+                            if x > (self.wind.x_pos) // GRASS_WIDTH:
+                                wind_force = self.wind.speed
+                        elif self.wind.dir == "right":
+                            if x < (self.wind.x_pos + self.wind.length * GRASS_WIDTH) // GRASS_WIDTH:
+                                wind_force = -self.wind.speed
+                        
 
                         if m_rect.colliderect(grass_rect):
                             if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
-                                dir = 'left'
-                            else:
                                 dir = 'right'
-                            grass.set_touch_force(dir=dir)
+                            else:
+                                dir = 'left'
+                            grass.set_touch_rot(dir, dt)
                             grass.set_render_img()
+                        else:
+                            grass.update(dt, wind_force)
 
-                        grass.render((0, min(max(15, int(255 * saturation)), 255), 0), self.display, render_scroll)
-            # for grass in grass_nearby:
-                
-            
+                        grass.render((0, 255, 0), self.display, render_scroll)
+
             if self.force > 0:
                 self.force = max(0, self.force - (self.force * dt))
             elif self.force < 0:
