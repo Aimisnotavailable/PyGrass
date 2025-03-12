@@ -5,9 +5,9 @@ import math
 from scripts.engine import Engine
 from scripts.camera import Follow
 
-GRASS_WIDTH = 6
+GRASS_WIDTH = 7
 LIGHT_LEVELS = 8
-MAX_ROT = 40
+MAX_ROT = 50
 DIR = {'left' : -1, 'right' : 1}
 
 RESISTANCE = 20
@@ -20,7 +20,7 @@ class Grass:
         self.height = height
 
         self.direction = random.choice([1, -1])
-        self.main_leaf_points = [[GRASS_WIDTH // 8, self.height * 0.6], [GRASS_WIDTH // 2, 0], [GRASS_WIDTH * 0.8, self.height * 0.6], [GRASS_WIDTH // 3, self.height]]
+        self.main_leaf_points = [[GRASS_WIDTH * max(0.3, random.random() - 0.5), self.height * (random.random() + 0.5)], [GRASS_WIDTH // max(1, (3 * random.random() + 0.5)) , random.random()], [GRASS_WIDTH * 0.8, self.height * (random.random() + 0.5)], [GRASS_WIDTH // max(1.4, (3 * random.random() + 0.5)), self.height]]
 
         self.img = pygame.Surface((GRASS_WIDTH, self.height), pygame.SRCALPHA)
         self.img_touch = pygame.Surface((GRASS_WIDTH, self.height), pygame.SRCALPHA)
@@ -38,7 +38,7 @@ class Grass:
             self.flower_color = (255, 255, 0)
 
         self.color = color
-        self.shadow_color = (0, 255 * max(0.4, min(1, random.random() + 0.1)), 0)
+        self.shadow_color = (self.color[0], self.color[1] - 40, self.color[2])
 
         self.img.fill((0, 0, 0, 0))
         pygame.draw.polygon(self.img, self.color, self.main_leaf_points)
@@ -121,7 +121,7 @@ class Window(Engine):
         self.mouse_surf = pygame.Surface((40, 40))
         self.flip = 1
 
-        self.wind = Wind(x_pos=self.display.get_width())
+        self.wind = Wind(x_pos=self.display.get_width(), speed=100)
 
     def run(self):
         while True:
@@ -178,7 +178,7 @@ class Window(Engine):
                 g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
                 
                 if g_pos not in self.grass:
-                    self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(120, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(15, 30)) 
+                    self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(150, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20)) 
 
             self.wind.update(dt, render_scroll)
             self.wind.render(self.display, render_scroll)
