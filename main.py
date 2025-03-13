@@ -14,10 +14,21 @@ RESISTANCE = 20
 
 BOUNDARY_KEYS = {"left_wind" : (0, 1, 1), "right_wind" : (1, 0, -1), "default" : (0, 1, 1)}
 
+OFFSETS = [(0, 1),
+           (0, -1),
+           (1, 0),
+           (-1, 0),
+           (1, 1),
+           (-1, 1),
+           (1, -1),
+           (-1,-1),]
+
 class Grass:
     def __init__(self, pos=(0, 0), color=(0, 255, 0), flower = False, height=20):
         self.pos : list = list(pos)
         self.height = height
+
+        self.at_rest_angle = random.randint(-20, 20)
 
         self.direction = random.choice([1, -1])
         self.main_leaf_points = [[GRASS_WIDTH * max(0.3, random.random() - 0.5), self.height * (random.random() + 0.5)], [GRASS_WIDTH // max(1, (3 * random.random() + 0.5)) , random.random()], [GRASS_WIDTH * 0.8, self.height * (random.random() + 0.5)], [GRASS_WIDTH // max(1.4, (3 * random.random() + 0.5)), self.height]]
@@ -66,15 +77,15 @@ class Grass:
 
         if wind_force == 0:
             if self.current_rot > 0 :
-                self.current_rot = max(0, self.current_rot - MAX_ROT * 2 * dt)
+                self.current_rot = max(self.at_rest_angle, self.current_rot - MAX_ROT * 2 * dt)
             else:
-                self.current_rot = min(0, self.current_rot + MAX_ROT * 2 * dt)
+                self.current_rot = min(self.at_rest_angle, self.current_rot + MAX_ROT * 2 * dt)
 
     def set_touch_rot(self, dir, dt):
         if dir == "left":
-            self.current_rot = self.current_rot = min(MAX_ROT, self.current_rot + MAX_ROT * 5 * dt)
+            self.current_rot = self.current_rot = min(MAX_ROT, self.current_rot + MAX_ROT * 3 * dt)
         elif dir == "right":
-            self.current_rot = self.current_rot = max(-MAX_ROT, self.current_rot - MAX_ROT * 5 * dt)
+            self.current_rot = self.current_rot = max(-MAX_ROT, self.current_rot - MAX_ROT * 3 * dt)
         
     def render(self, color, surf : pygame.Surface, render_scroll=(0, 0)):
         img = pygame.transform.rotate(self.render_img, self.current_rot)
@@ -176,7 +187,7 @@ class Window(Engine):
             if self.insert:
                 pos = m_rect.center
                 g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
-                
+
                 if g_pos not in self.grass:
                     self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(150, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20)) 
 
