@@ -10,6 +10,8 @@ LIGHT_LEVELS = 8
 MAX_ROT = 50
 DIR = {'left' : -1, 'right' : 1}
 
+RADIUS = 5
+
 RESISTANCE = 20
 
 BOUNDARY_KEYS = {"left_wind" : (0, 1, 1), "right_wind" : (1, 0, -1), "default" : (0, 1, 1)}
@@ -52,6 +54,8 @@ class Grass:
         self.shadow_color = (self.color[0], self.color[1] - 40, self.color[2])
 
         self.img.fill((0, 0, 0, 0))
+
+        #pygame.draw.circle(self.img, (0, 0, 0, 255), (GRASS_WIDTH // 2, self.height), GRASS_WIDTH)
         pygame.draw.polygon(self.img, self.color, self.main_leaf_points)
         pygame.draw.polygon(self.img_touch, self.shadow_color, self.main_leaf_points)
 
@@ -59,6 +63,7 @@ class Grass:
             flower_points = [self.main_leaf_points[0], self.main_leaf_points[1], self.main_leaf_points[2]]
             pygame.draw.polygon(self.img, self.flower_color, flower_points)
             pygame.draw.polygon(self.img_touch, self.flower_color, flower_points)
+
 
 
     def set_render_img(self):
@@ -129,7 +134,7 @@ class Window(Engine):
 
         self.mouse_offset = [0, 0]
 
-        self.mouse_surf = pygame.Surface((40, 40))
+        self.mouse_surf = pygame.Surface((RADIUS * 2, RADIUS * 2))
         self.flip = 1
 
         self.wind = Wind(x_pos=self.display.get_width(), speed=100)
@@ -185,11 +190,12 @@ class Window(Engine):
             world_size = [world_boundary_x[1] - world_boundary_x[0], world_boundary_y[1] - world_boundary_y[0]]
 
             if self.insert:
-                pos = m_rect.center
-                g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
-
-                if g_pos not in self.grass:
-                    self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(150, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20)) 
+                for x in range(0, int(RADIUS * 2)):
+                    for y in range(0, int(RADIUS * 2)):
+                        pos = (m_rect[0] + x, m_rect[1] + y)
+                        g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
+                        if g_pos not in self.grass:
+                            self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(40, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20)) 
 
             self.wind.update(dt, render_scroll)
             self.wind.render(self.display, render_scroll)
@@ -228,7 +234,7 @@ class Window(Engine):
             elif self.force < 0:
                 self.force = min(0, self.force - (self.force * dt))
             
-            pygame.draw.circle(self.display, (255, 255, 255), (m_rect.center[0] - render_scroll[0], m_rect.center[1] - render_scroll[1]) , 20, 1)
+            pygame.draw.circle(self.display, (255, 255, 255), (m_rect.center[0] - render_scroll[0], m_rect.center[1] - render_scroll[1]) , RADIUS, 1)
 
             display_mask = pygame.mask.from_surface(self.display)
             display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 0), unsetcolor=(0, 0, 0, 0))
