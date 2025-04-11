@@ -1,4 +1,5 @@
 import socket
+from obj import TestOBJ
 
 HEADER = 64
 PORT = 5050
@@ -16,9 +17,11 @@ def send(msg : str):
     message = msg.encode(FORMAT)
     msg_length = len(message)
     send_length = str(msg_length).encode(FORMAT)
+    
     send_length += b' ' * (HEADER - len(send_length))
+    print(send_length)
     client.send(send_length)
     client.send(message)
 
-send("HELLO WORLD")
+send(TestOBJ(socket.gethostbyname(socket.gethostname()), "HELLO WORLD").serialize())
 send(DISCONNECT_MESSAGE)

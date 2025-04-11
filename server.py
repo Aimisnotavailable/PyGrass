@@ -1,5 +1,7 @@
 import socket
 import threading
+import json
+from obj import TestOBJ
 #import pickle for sending objects
 
 HEADER = 64
@@ -8,6 +10,8 @@ SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = "utf-8"
 DISCONNECT_MESSAGE = "!DISCONNECT"
+
+
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
@@ -25,9 +29,10 @@ def handle_client(conn : socket.socket, addr : str):
 
             if msg == DISCONNECT_MESSAGE:
                 connected = False
-
-            print(f"[{addr}] {msg}")
-            conn.send("Msg received".encode(format))
+                break
+            
+            print(f"[{addr}] {TestOBJ().deserialize(msg)}")
+            conn.send("Msg received".encode(FORMAT))
     conn.close()
 
 def start():
