@@ -2,6 +2,8 @@ import pygame
 import sys
 import random
 import math
+import threading
+from gamehandler import GameClient
 from scripts.engine import Engine
 from scripts.camera import Follow
 
@@ -24,6 +26,8 @@ OFFSETS = [(0, 1),
            (-1, 1),
            (1, -1),
            (-1,-1),]
+
+CLIENT = GameClient("192.168.0.176")
 
 class Grass:
     def __init__(self, pos=(0, 0), color=(0, 255, 0), flower = False, height=20):
@@ -125,6 +129,12 @@ class Window(Engine):
         self.insert = False
         self.delete = False
         self.world_pos = [0, 0]
+        
+        self.players = {}
+        self.id = ""
+
+        thread = threading.Thread(target=CLIENT.send, args=(self,))
+        thread.start()
 
         self.grass : dict[str:Grass] = {}
         self.force = 0
@@ -150,15 +160,15 @@ class Window(Engine):
 
             self.world_pos = [mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]]
             
-            if mpos[0] >= self.display.get_width() - 5:
-                self.mouse_offset[0] += 100 * dt
-            elif mpos[0] <= 5:
-                self.mouse_offset[0] -= 100 * dt
+            # if mpos[0] >= self.display.get_width() - 5:
+            #     self.mouse_offset[0] += 100 * dt
+            # elif mpos[0] <= 5:
+            #     self.mouse_offset[0] -= 100 * dt
 
-            if mpos[1] >= self.display.get_height() - 5:
-                self.mouse_offset[1] += 300 * dt
-            elif mpos[1] <= 5:
-                self.mouse_offset[1] -= 300 * dt
+            # if mpos[1] >= self.display.get_height() - 5:
+            #     self.mouse_offset[1] += 300 * dt
+            # elif mpos[1] <= 5:
+            #     self.mouse_offset[1] -= 300 * dt
 
             render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
             m_rect = self.mouse_surf.get_rect(center=[mpos[0] + render_scroll[0], mpos[1] + render_scroll[1]])
@@ -235,6 +245,13 @@ class Window(Engine):
                 self.force = min(0, self.force - (self.force * dt))
             
             pygame.draw.circle(self.display, (255, 255, 255), (m_rect.center[0] - render_scroll[0], m_rect.center[1] - render_scroll[1]) , RADIUS, 1)
+
+            if len(self.players):
+                for player in self.players.values():
+                    print("Player : ", player)
+                    if player:
+                        p_rect = self.mouse_surf.get_rect(center=player)
+                        pygame.draw.circle(self.display, (255, 255, 255), (p_rect.center[0] - render_scroll[0], p_rect.center[1] - render_scroll[1]) , RADIUS, 1)
 
             display_mask = pygame.mask.from_surface(self.display)
             display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 0), unsetcolor=(0, 0, 0, 0))

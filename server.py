@@ -5,4 +5,4 @@ from networkHandler import Server
 
 
 print("[STARTING] server is starting")
-Server(socket.gethostbyname(socket.gethostname())).start()
+Server("192.168.0.176").start()
