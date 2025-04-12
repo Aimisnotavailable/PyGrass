@@ -7,9 +7,10 @@ client = Client("169.254.177.202")
 
 while True:
     if input() != 'a':
-        client.send(TestOBJ(socket.gethostbyname(socket.gethostname()), "HELLO WORLD").serialize())
-        msg = client.client.recv(client.HEADER).decode(client.FORMAT)
-        print(msg)
+        client.send_msg(client.client, TestOBJ(socket.gethostbyname(socket.gethostname()), "HELLO WORLD").serialize())
+        msg = client.receive_msg(client.client)
+        if msg:
+            print(msg)
     else:
         client.send(DISCONNECT_MESSAGE)
         break

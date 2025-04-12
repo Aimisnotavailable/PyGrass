@@ -18,6 +18,26 @@ class NetworkHandler(ABC):
         self.DISCONNECT_MESSAGE = "!DISCONNECT"
         #--------------------END OF CONST----------------#
 
+    def __send_msg_size__(self, msg):
+        msg_length = len(msg)
+        send_length = str(msg_length).encode(self.FORMAT)
+        
+        send_length += b' ' * (self.HEADER - len(send_length))
+
+        return send_length
+
+    def send_msg(self, conn : socket.socket , msg: str):
+        msg = msg.encode(self.FORMAT)
+        conn.send(self.__send_msg_size__(msg))
+        conn.send(msg)
+    
+    def receive_msg(self, conn : socket.socket):
+        msg_length = conn.recv(self.HEADER).decode(self.FORMAT)
+        if msg_length:
+            msg_length = int(msg_length)
+            return conn.recv(msg_length).decode(self.FORMAT)
+        return None
+        
 class Server(NetworkHandler):
 
     def __init__(self, IP):
@@ -33,24 +53,22 @@ class Server(NetworkHandler):
     def add_conn(self):
         pass
     
-    def handle_client(self, conn : socket.socket, addr : str):
+    def handle_client(self, conn : socket.socket, addr : str, game = None):
 
         print(f"[NEW CONNECTION] {addr} connected.")
 
         connected = True
         while connected:
 
-            msg_length = conn.recv(self.HEADER).decode(self.FORMAT)
-            if msg_length:
-                msg_length = int(msg_length)
-                msg = conn.recv(msg_length).decode(self.FORMAT)
-
+            msg = self.receive_msg(conn)
+            if msg:
                 if msg == self.DISCONNECT_MESSAGE:
                     connected = False
                     break
-                
-                print(f"[{addr}] {msg}")
-                conn.send(str(json.dumps(self.clients)).encode(self.FORMAT))
+                print(msg)
+                reply = str(json.dumps(self.clients))
+                self.send_msg(conn, reply)
+
         conn.close()
     
     def __generate_id__(self):
@@ -77,16 +95,6 @@ class Client(NetworkHandler):
     def __connect__(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect(self.ADDR)
-
-    def send(self, msg : str):
-        print(msg)
-        message = msg.encode(self.FORMAT)
-        msg_length = len(message)
-        send_length = str(msg_length).encode(self.FORMAT)
-        
-        send_length += b' ' * (self.HEADER - len(send_length))
-        self.client.send(send_length)
-        self.client.send(message)
 
 
     

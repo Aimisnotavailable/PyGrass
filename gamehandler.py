@@ -10,14 +10,13 @@ class GameClient(Client):
     def send(self, game):
         while True:
             msg = f'{game.world_pos}'
-            super().send(msg)
+            self.send_msg(self.client, msg)
+            print(self.receive_msg(self.client))
 
 class GameServer(Server):
 
     def __init__(self, IP):
         super().__init__(IP)
-        self.clients = []
-
+    
     def handle_client(self, conn, addr):
-
         super().handle_client(conn, addr)
