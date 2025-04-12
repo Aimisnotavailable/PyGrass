@@ -55,7 +55,6 @@ class Grass:
 
         self.img.fill((0, 0, 0, 0))
 
-        #pygame.draw.circle(self.img, (0, 0, 0, 255), (GRASS_WIDTH // 2, self.height), GRASS_WIDTH)
         pygame.draw.polygon(self.img, self.color, self.main_leaf_points)
         pygame.draw.polygon(self.img_touch, self.shadow_color, self.main_leaf_points)
 
@@ -63,7 +62,6 @@ class Grass:
             flower_points = [self.main_leaf_points[0], self.main_leaf_points[1], self.main_leaf_points[2]]
             pygame.draw.polygon(self.img, self.flower_color, flower_points)
             pygame.draw.polygon(self.img_touch, self.flower_color, flower_points)
-
 
 
     def set_render_img(self):
@@ -160,7 +158,6 @@ class Window(Engine):
                 self.mouse_offset[1] -= 300 * dt
 
             render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
-
             m_rect = self.mouse_surf.get_rect(center=[mpos[0] + render_scroll[0], mpos[1] + render_scroll[1]])
 
             if not int(self.force):
@@ -187,7 +184,6 @@ class Window(Engine):
             # WORLD GRID POSITIONS
             world_boundary_x = [render_scroll[0] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[0] + self.display.get_width()) // GRASS_WIDTH + GRASS_WIDTH]
             world_boundary_y = [render_scroll[1] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[1] + self.display.get_height()) // GRASS_WIDTH + GRASS_WIDTH]
-            world_size = [world_boundary_x[1] - world_boundary_x[0], world_boundary_y[1] - world_boundary_y[0]]
 
             if self.insert:
                 for x in range(0, int(RADIUS * 2)):

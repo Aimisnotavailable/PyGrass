@@ -1,27 +1,15 @@
 import socket
+from networkHandler import Client
 from obj import TestOBJ
 
-HEADER = 64
-PORT = 5050
-FORMAT = "utf-8"
 DISCONNECT_MESSAGE = "!DISCONNECT"
+client = Client("169.254.177.202")
 
-SERVER = "169.254.177.202"
-ADDR = (SERVER, PORT)
-
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(ADDR)
-
-
-def send(msg : str):
-    message = msg.encode(FORMAT)
-    msg_length = len(message)
-    send_length = str(msg_length).encode(FORMAT)
-    
-    send_length += b' ' * (HEADER - len(send_length))
-    print(send_length)
-    client.send(send_length)
-    client.send(message)
-
-send(TestOBJ(socket.gethostbyname(socket.gethostname()), "HELLO WORLD").serialize())
-send(DISCONNECT_MESSAGE)
+while True:
+    if input() != 'a':
+        client.send(TestOBJ(socket.gethostbyname(socket.gethostname()), "HELLO WORLD").serialize())
+        msg = client.client.recv(client.HEADER).decode(client.FORMAT)
+        print(msg)
+    else:
+        client.send(DISCONNECT_MESSAGE)
+        break
