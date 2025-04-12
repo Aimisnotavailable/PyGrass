@@ -53,8 +53,7 @@ class Server(NetworkHandler):
     def add_conn(self):
         pass
     
-    def handle_client(self, conn : socket.socket, addr : str, game = None):
-
+    def handle_client(self, conn : socket.socket, addr : str, client_id = ""):
         print(f"[NEW CONNECTION] {addr} connected.")
 
         connected = True
@@ -65,8 +64,11 @@ class Server(NetworkHandler):
                 if msg == self.DISCONNECT_MESSAGE:
                     connected = False
                     break
-                print(msg)
-                reply = str(json.dumps(self.clients))
+
+                self.clients[client_id] = json.loads(msg)
+                clients = self.clients.copy()
+                del clients[client_id]
+                reply = str(json.dumps(clients))
                 self.send_msg(conn, reply)
 
         conn.close()
@@ -80,9 +82,10 @@ class Server(NetworkHandler):
 
         while True:
             conn, addr = self.server.accept()
-            self.clients[self.__generate_id__()] = ""
+            client_id = self.__generate_id__()
+            self.clients[client_id] = ""
 
-            thread = threading.Thread(target=self.handle_client, args=(conn, addr))
+            thread = threading.Thread(target=self.handle_client, args=(conn, addr, client_id))
             thread.start()
 
             print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
