@@ -1,5 +1,7 @@
 import socket
 import threading
+import random
+import json
 from abc import ABC, abstractmethod
 
 class NetworkHandler(ABC):
@@ -20,6 +22,7 @@ class Server(NetworkHandler):
 
     def __init__(self, IP):
         super().__init__(IP)
+        self.clients : dict[str : str] = {}
 
         self.__start_server__()
 
@@ -47,14 +50,20 @@ class Server(NetworkHandler):
                     break
                 
                 print(f"[{addr}] {msg}")
-                conn.send("Msg received".encode(self.FORMAT))
+                conn.send(str(json.dumps(self.clients)).encode(self.FORMAT))
         conn.close()
-
+    
+    def __generate_id__(self):
+        return "".join([chr(random.randint(65, 122)) for i in range(30)])
+    
     def start(self):
         self.server.listen()
         print(f"[LISTENING] Server is listening on {self.IP}")
+
         while True:
             conn, addr = self.server.accept()
+            self.clients[self.__generate_id__()] = ""
+
             thread = threading.Thread(target=self.handle_client, args=(conn, addr))
             thread.start()
 
