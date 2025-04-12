@@ -70,6 +70,7 @@ class Client(NetworkHandler):
         self.client.connect(self.ADDR)
 
     def send(self, msg : str):
+        print(msg)
         message = msg.encode(self.FORMAT)
         msg_length = len(message)
         send_length = str(msg_length).encode(self.FORMAT)

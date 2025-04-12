@@ -2,6 +2,8 @@ import pygame
 import sys
 import random
 import math
+import threading
+from gamehandler import GameClient
 from scripts.engine import Engine
 from scripts.camera import Follow
 
@@ -24,6 +26,8 @@ OFFSETS = [(0, 1),
            (-1, 1),
            (1, -1),
            (-1,-1),]
+
+CLIENT = GameClient("169.254.177.202")
 
 class Grass:
     def __init__(self, pos=(0, 0), color=(0, 255, 0), flower = False, height=20):
@@ -124,6 +128,10 @@ class Window(Engine):
         self.display_2 = pygame.Surface((300, 200))
         self.insert = False
         self.delete = False
+        self.world_pos = [0, 0]
+        
+        thread = threading.Thread(target=CLIENT.send, args=(self,))
+        thread.start()
 
         self.grass : dict[str:Grass] = {}
         self.force = 0
@@ -146,6 +154,8 @@ class Window(Engine):
 
             mpos = pygame.mouse.get_pos()
             mpos = [mpos[0] // 2, mpos[1] // 2]
+
+            self.world_pos = [mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]]
             
             if mpos[0] >= self.display.get_width() - 5:
                 self.mouse_offset[0] += 100 * dt
