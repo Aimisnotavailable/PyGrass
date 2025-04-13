@@ -44,7 +44,7 @@ class Window(Engine):
         thread = threading.Thread(target=SERVER.start)
         thread.start()
 
-        self.grass : dict[str:Grass] = {}
+        self.grass : dict[str : Grass] = {}
         self.force = 0
 
         self.camera = Follow('Follow', 0.03)
@@ -70,15 +70,15 @@ class Window(Engine):
             
             self.players['SERVER'] = self.world_pos
 
-            # if mpos[0] >= self.display.get_width() - 5:
-            #     self.mouse_offset[0] += 100 * dt
-            # elif mpos[0] <= 5:
-            #     self.mouse_offset[0] -= 100 * dt
+            if mpos[0] >= self.display.get_width() - 5:
+                self.mouse_offset[0] += 100 * dt
+            elif mpos[0] <= 5:
+                self.mouse_offset[0] -= 100 * dt
 
-            # if mpos[1] >= self.display.get_height() - 5:
-            #     self.mouse_offset[1] += 300 * dt
-            # elif mpos[1] <= 5:
-            #     self.mouse_offset[1] -= 300 * dt
+            if mpos[1] >= self.display.get_height() - 5:
+                self.mouse_offset[1] += 300 * dt
+            elif mpos[1] <= 5:
+                self.mouse_offset[1] -= 300 * dt
 
             render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
             m_rect = self.mouse_surf.get_rect(center=[mpos[0] + render_scroll[0], mpos[1] + render_scroll[1]])
@@ -155,7 +155,7 @@ class Window(Engine):
             for player in self.players.values():
                 if player:
                     p_rect = self.mouse_surf.get_rect(center=player)
-                    pygame.draw.circle(self.display, (255, 255, 255), (p_rect.center[0] - render_scroll[0], p_rect.center[1] - render_scroll[1]) , RADIUS, 1)
+                    pygame.draw.circle(self.display, (255, 255, 255), (p_rect.center[0] - self.mouse_offset[0], p_rect.center[1] - self.mouse_offset[1]) , RADIUS, 1)
 
             display_mask = pygame.mask.from_surface(self.display)
             display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 0), unsetcolor=(0, 0, 0, 0))

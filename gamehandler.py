@@ -13,8 +13,13 @@ class GameClient(Client):
         while True:
             msg = f'{game.world_pos}'
             self.send_msg(self.client, msg)
+
             game.players = self.request_player_pos()
-    
+
+            # game.grass = json.loads(self.receive_msg(self.client))
+
+            # print(game.grass)
+
     def request_player_pos(self):
         return json.loads(self.receive_msg(self.client))
             
@@ -38,7 +43,7 @@ class GameServer(Server):
             thread.start()
 
             print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 2}")
-    
+
     def handle_client(self, conn, addr, client_id=""):
         print(f"[NEW CONNECTION] {addr} connected.")
         connected = True
@@ -55,7 +60,6 @@ class GameServer(Server):
                 self.game.players[client_id] = json.loads(msg)
 
                 players = self.game.players.copy()
-                del players[client_id]
 
                 reply = json.dumps(players)
                 self.send_msg(conn, reply)
