@@ -9,13 +9,14 @@ DIR = {'left' : -1, 'right' : 1}
 
 
 class Grass:
-    def __init__(self, pos=(0, 0), color=(0, 255, 0), flower = False, height=20):
+    def __init__(self, pos=(0, 0), color=(0, 255, 0),  flower = False, height=20):
         self.pos : list = list(pos)
         self.height = height
 
         self.at_rest_angle = random.randint(-20, 20)
 
         self.direction = random.choice([1, -1])
+        
         self.main_leaf_points = [[GRASS_WIDTH * max(0.3, random.random() - 0.5), self.height * (random.random() + 0.5)], [GRASS_WIDTH // max(1, (3 * random.random() + 0.5)) , random.random()], [GRASS_WIDTH * 0.8, self.height * (random.random() + 0.5)], [GRASS_WIDTH // max(1.4, (3 * random.random() + 0.5)), self.height]]
 
         self.img = pygame.Surface((GRASS_WIDTH, self.height), pygame.SRCALPHA)

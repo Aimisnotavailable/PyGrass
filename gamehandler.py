@@ -28,11 +28,13 @@ class GameClient(Client):
             msg = game.grass_update
             self.send_msg(self.client, json.dumps(msg))
 
-            self.deserialize_data()
+            self.convert_to_game_object(game, self.deserialize_data())
             
-    def convert_to_game_object(self):
-        pass
-    
+    def convert_to_game_object(self, game, data : dict):
+
+        for key, val in data.items():
+            game.grass[key] = Grass(val['GRASS_POS'])
+        
     def deserialize_data(self):
         return json.loads(self.receive_msg(self.client))
 
@@ -83,6 +85,7 @@ class GameServer(Server):
                 if msg == "REQUEST_GRASS_DATA":
 
                     msg = json.loads(self.receive_msg(conn))
+
                     if msg['GRASS_ACTION'] == 'ADD':
                         if msg['GRASS_POS'] not in self.game.grass:
                             self.game.grass[msg['GRASS_POS']] = Grass(msg['GRASS_POS_INT'], (0, random.randint(40, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20))
@@ -94,8 +97,11 @@ class GameServer(Server):
                             key = f"{x} ; {y}"
 
                             if key in self.game.grass:
-                                grass_msg[key] = { "GRASS_POS" : self.game.grass[key].pos, "GRASS_ROT" : self.game.grass[key].current_rot, "LEAF_POINTS" : self.game.grass[key].main_leaf_points, "FLOWER" : self.game.grass[key].flower}
+                                grass_msg[key] = {"GRASS_POS" : self.game.grass[key].pos}
                     
+                    with open('test.json', 'w+') as fp:
+                        json.dump(grass_msg, fp, indent=2)
+
                     reply = json.dumps(grass_msg)
                     self.send_msg(conn, reply)
 

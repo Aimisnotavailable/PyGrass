@@ -72,7 +72,7 @@ class Window(Engine):
             mpos = pygame.mouse.get_pos()
             mpos = [mpos[0] // 2, mpos[1] // 2]
 
-            self.world_pos = [mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]]
+            self.world_pos = [int(mpos[0] + self.mouse_offset[0]), int(mpos[1] + self.mouse_offset[1])]
 
             if mpos[0] >= self.display.get_width() - 5:
                 self.mouse_offset[0] += 100 * dt
@@ -114,13 +114,13 @@ class Window(Engine):
 
             self.grass_update = {'GRASS_ACTION' : "", "BOUNDARY_X" : self.world_boundary_x, "BOUNDARY_Y" : self.world_boundary_y}
 
-            if self.insert:
-                for x in range(0, int(RADIUS * 2)):
-                    for y in range(0, int(RADIUS * 2)):
-                        pos = (m_rect[0] + x, m_rect[1] + y)
-                        g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
-                        if g_pos not in self.grass:
-                            self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(40, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20)) 
+            # if self.insert:
+            #     for x in range(0, int(RADIUS * 2)):
+            #         for y in range(0, int(RADIUS * 2)):
+            #             pos = (m_rect[0] + x, m_rect[1] + y)
+            #             g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
+            #             if g_pos not in self.grass:
+            #                 self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(40, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20)) 
 
             self.wind.update(dt, render_scroll)
             self.wind.render(self.display, render_scroll)
@@ -166,6 +166,7 @@ class Window(Engine):
             display_mask = pygame.mask.from_surface(self.display)
             display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 0), unsetcolor=(0, 0, 0, 0))
 
+            self.display.blit(self.font.render(f"{self.world_pos}", True, (0, 0, 0)), (0, 0))
             for offset in [(0, -1), (0, 1), (1, 0), (-1, 0)]:
                 self.display_2.blit(display_sillhouette, offset)
             

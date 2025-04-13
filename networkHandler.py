@@ -11,7 +11,7 @@ class NetworkHandler(ABC):
 
         #----------------------CONST----------------------#
         self.IP = IP
-        self.HEADER = 64
+        self.HEADER = 4096
         self.PORT = 5050
         self.ADDR = (self.IP, self.PORT)
         self.FORMAT = "utf-8"
