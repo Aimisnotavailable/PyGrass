@@ -40,9 +40,16 @@ class Window(Engine):
         self.players = {}
         self.id = ""
         self.grass : dict[str:Grass] = {}
+        
+        self.world_boundary_x = [0, 0]
+        self.world_boundary_y = [0, 0]
+        
 
-        thread = threading.Thread(target=CLIENT.send_pos, args=(self,))
+        self.grass_update = {'GRASS_ACTION' : "", "BOUNDARY_X" : self.world_boundary_x, "BOUNDARY_Y" : self.world_boundary_y}
+
+        thread = threading.Thread(target=CLIENT.request_world_data, args=(self,))
         thread.start()
+
 
         self.force = 0
 
@@ -102,8 +109,10 @@ class Window(Engine):
                         self.delete = False
 
             # WORLD GRID POSITIONS
-            world_boundary_x = [render_scroll[0] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[0] + self.display.get_width()) // GRASS_WIDTH + GRASS_WIDTH]
-            world_boundary_y = [render_scroll[1] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[1] + self.display.get_height()) // GRASS_WIDTH + GRASS_WIDTH]
+            self.world_boundary_x = [render_scroll[0] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[0] + self.display.get_width()) // GRASS_WIDTH + GRASS_WIDTH]
+            self.world_boundary_y = [render_scroll[1] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[1] + self.display.get_height()) // GRASS_WIDTH + GRASS_WIDTH]
+
+            self.grass_update = {'GRASS_ACTION' : "", "BOUNDARY_X" : self.world_boundary_x, "BOUNDARY_Y" : self.world_boundary_y}
 
             if self.insert:
                 for x in range(0, int(RADIUS * 2)):
@@ -116,8 +125,8 @@ class Window(Engine):
             self.wind.update(dt, render_scroll)
             self.wind.render(self.display, render_scroll)
 
-            for x in range(world_boundary_x[0], world_boundary_x[1]):
-                for y in range(world_boundary_y[0], world_boundary_y[1]):
+            for x in range(self.world_boundary_x[0], self.world_boundary_x[1]):
+                for y in range(self.world_boundary_y[0], self.world_boundary_y[1]):
                     g_pos = f"{x} ; {y}"
                     
                     if g_pos in self.grass:
