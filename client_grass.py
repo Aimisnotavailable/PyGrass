@@ -4,7 +4,7 @@ import random
 import math
 import threading
 from grass import Grass, Wind, GRASS_WIDTH
-from gamehandler import GameClient
+from gamehandler import GameClient, game_grass
 from scripts.engine import Engine
 from scripts.camera import Follow
 
@@ -45,11 +45,7 @@ class Window(Engine):
         self.world_boundary_y = [0, 0]
         
 
-        self.grass_update = {'GRASS_ACTION' : "", "BOUNDARY_X" : self.world_boundary_x, "BOUNDARY_Y" : self.world_boundary_y}
-
-        thread = threading.Thread(target=CLIENT.request_world_data, args=(self,))
-        thread.start()
-
+        self.grass_update_msg = {'GRASS_ACTION' : "", "BOUNDARY_X" : self.world_boundary_x, "BOUNDARY_Y" : self.world_boundary_y}
 
         self.force = 0
 
@@ -74,19 +70,19 @@ class Window(Engine):
 
             self.world_pos = [int(mpos[0] + self.mouse_offset[0]), int(mpos[1] + self.mouse_offset[1])]
 
-            if mpos[0] >= self.display.get_width() - 5:
-                self.mouse_offset[0] += 100 * dt
-            elif mpos[0] <= 5:
-                self.mouse_offset[0] -= 100 * dt
+            # if mpos[0] >= self.display.get_width() - 5:
+            #     self.mouse_offset[0] += 100 * dt
+            # elif mpos[0] <= 5:
+            #     self.mouse_offset[0] -= 100 * dt
 
-            if mpos[1] >= self.display.get_height() - 5:
-                self.mouse_offset[1] += 300 * dt
-            elif mpos[1] <= 5:
-                self.mouse_offset[1] -= 300 * dt
+            # if mpos[1] >= self.display.get_height() - 5:
+            #     self.mouse_offset[1] += 300 * dt
+            # elif mpos[1] <= 5:
+            #     self.mouse_offset[1] -= 300 * dt
 
             render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
             m_rect = self.mouse_surf.get_rect(center=[mpos[0] + render_scroll[0], mpos[1] + render_scroll[1]])
-
+            
             if not int(self.force):
                 self.flip *= -1
                 self.force = 100 * self.flip
@@ -111,9 +107,9 @@ class Window(Engine):
             # WORLD GRID POSITIONS
             self.world_boundary_x = [render_scroll[0] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[0] + self.display.get_width()) // GRASS_WIDTH + GRASS_WIDTH]
             self.world_boundary_y = [render_scroll[1] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[1] + self.display.get_height()) // GRASS_WIDTH + GRASS_WIDTH]
-
-            self.grass_update = {'GRASS_ACTION' : "", "BOUNDARY_X" : self.world_boundary_x, "BOUNDARY_Y" : self.world_boundary_y}
-
+            self.grass_update_msg = {'GRASS_ACTION' : "", "BOUNDARY_X" : self.world_boundary_x, "BOUNDARY_Y" : self.world_boundary_y}
+            
+            CLIENT.request_world_data(self)
             # if self.insert:
             #     for x in range(0, int(RADIUS * 2)):
             #         for y in range(0, int(RADIUS * 2)):
@@ -128,30 +124,40 @@ class Window(Engine):
             for x in range(self.world_boundary_x[0], self.world_boundary_x[1]):
                 for y in range(self.world_boundary_y[0], self.world_boundary_y[1]):
                     g_pos = f"{x} ; {y}"
-                    
-                    if g_pos in self.grass:
-                        grass : Grass = self.grass[g_pos]
-                        grass_rect = grass.rect()
-                        wind_force = 0
+                    grass = None
 
-                        if self.wind.dir == "left":
-                            if x > (self.wind.x_pos) // GRASS_WIDTH:
-                                wind_force = self.wind.speed
-                        elif self.wind.dir == "right":
-                            if x < (self.wind.x_pos + self.wind.length * GRASS_WIDTH) // GRASS_WIDTH:
-                                wind_force = -self.wind.speed
+                    # if g_pos in self.grass:
+                    #     print(self.grass[g_pos])
+                    #     grass : Grass = self.grass[g_pos]
+                    # else: 
+                    #     request_msg = {"GRASS_ACTION" : "", "KEY" : g_pos}
+                    #     grass_data = CLIENT.request_grass_position_data(request_msg)
+                    #     print(grass_data)
+                    #     if grass_data['GRASS_EXIST']:
+                    #         grass : Grass = Grass(grass_data['GRASS_POS'], grass_data['GRASS_COLOR'], grass_data['FLOWER'])
+
+                    # if grass:
+                    #     grass_rect = grass.rect()
+                    #     wind_force = 0
+
+                    #     if self.wind.dir == "left":
+                    #         if x > (self.wind.x_pos) // GRASS_WIDTH:
+                    #             wind_force = self.wind.speed
+                    #     elif self.wind.dir == "right":
+                    #         if x < (self.wind.x_pos + self.wind.length * GRASS_WIDTH) // GRASS_WIDTH:
+                    #             wind_force = -self.wind.speed
                         
-                        if m_rect.colliderect(grass_rect):
-                            if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
-                                dir = 'right'
-                            else:
-                                dir = 'left'
-                            grass.set_touch_rot(dir, dt)
-                            grass.set_render_img()
-                        else:
-                            grass.update(dt, wind_force)
+                    #     if m_rect.colliderect(grass_rect):
+                    #         if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
+                    #             dir = 'right'
+                    #         else:
+                    #             dir = 'left'
+                    #         grass.set_touch_rot(dir, dt)
+                    #         grass.set_render_img()
+                    #     else:
+                    #         grass.update(dt, wind_force)
 
-                        grass.render((0, 255, 0), self.display, render_scroll)
+                    #     grass.render((0, 255, 0), self.display, render_scroll)
 
             if self.force > 0:
                 self.force = max(0, self.force - (self.force * dt))

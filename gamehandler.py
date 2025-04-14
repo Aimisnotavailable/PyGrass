@@ -5,6 +5,8 @@ from grass import Grass, GRASS_WIDTH
 from networkHandler import Client, Server
 # from main import Window
 
+lock = threading.Lock()
+game_grass = {}
 
 class GameClient(Client):
 
@@ -12,31 +14,28 @@ class GameClient(Client):
         super().__init__(IP)
 
     def request_world_data(self, game):
-        while True:
+        self.request_player_position_data(game)
+        self.request_grass_position_data(game)
 
-            msg = "REQUEST_POSITION_DATA"
-            self.send_msg(self.client, msg)
+    def request_player_position_data(self, game):
+        msg = "REQUEST_POSITION_DATA"
+        self.send_msg(self.client, msg)
 
-            msg = f'{game.world_pos}'
-            self.send_msg(self.client, msg)
+        msg = f'{game.world_pos}'
+        self.send_msg(self.client, msg)
 
-            game.players = self.deserialize_data()
+        game.players = self.deserialize_data(self.receive_msg(self.client))
 
-            msg  = "REQUEST_GRASS_DATA"
-            self.send_msg(self.client, msg)
+    def request_grass_position_data(self, game: str):
 
-            msg = game.grass_update
-            self.send_msg(self.client, json.dumps(msg))
+        msg  = "REQUEST_GRASS_DATA"
+        self.send_msg(self.client, msg)
 
-            self.convert_to_game_object(game, self.deserialize_data())
-            
-    def convert_to_game_object(self, game, data : dict):
-
-        for key, val in data.items():
-            game.grass[key] = Grass(val['GRASS_POS'])
-        
-    def deserialize_data(self):
-        return json.loads(self.receive_msg(self.client))
+        self.send_msg(self.client, json.dumps(game.grass_update_msg))
+        print(len(self.deserialize_data(self.receive_msg(self.client))))
+    
+    def deserialize_data(self, reply):
+        return json.loads(reply)
 
 class GameServer(Server):
 
@@ -46,7 +45,8 @@ class GameServer(Server):
     
     def start(self):
         self.server.listen()
-        print(f"[LISTENING] Server is listening on {self.IP}")
+        
+        (f"[LISTENING] Server is listening on {self.IP}")
 
         while True:
             conn, addr = self.server.accept()
@@ -83,25 +83,20 @@ class GameServer(Server):
                     self.send_msg(conn, reply)
                 
                 if msg == "REQUEST_GRASS_DATA":
-
+                    global game_grass
                     msg = json.loads(self.receive_msg(conn))
-
-                    if msg['GRASS_ACTION'] == 'ADD':
-                        if msg['GRASS_POS'] not in self.game.grass:
-                            self.game.grass[msg['GRASS_POS']] = Grass(msg['GRASS_POS_INT'], (0, random.randint(40, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20))
-
                     grass_msg = {}
 
-                    for x in range(msg['BOUNDARY_X'][0], msg['BOUNDARY_X'][1]):
-                        for y in range(msg['BOUNDARY_Y'][0], msg['BOUNDARY_Y'][1]):
-                            key = f"{x} ; {y}"
-
-                            if key in self.game.grass:
-                                grass_msg[key] = {"GRASS_POS" : self.game.grass[key].pos}
-                    
-                    with open('test.json', 'w+') as fp:
-                        json.dump(grass_msg, fp, indent=2)
-
+                    with lock:
+                        if msg['GRASS_ACTION'] == 'ADD':
+                            if msg['GRASS_POS'] not in game_grass:
+                                game_grass[msg['GRASS_POS']] = Grass(msg['GRASS_POS_INT'], (0, random.randint(40, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20))
+                        else:
+                            for x in range(msg['BOUNDARY_X'][0], msg['BOUNDARY_X'][1]):
+                                for y in range(msg['BOUNDARY_Y'][0], msg['BOUNDARY_Y'][1]):
+                                    key = f"{x} ; {y}"
+                                    if key in game_grass:
+                                        grass_msg[key] = {"GRASS_POS" : game_grass[key].pos, "GRASS_COLOR" : game_grass[key].color, "GRASS_POINTS" : game_grass[key].main_leaf_points, "FLOWER" : game_grass[key].flower,}
                     reply = json.dumps(grass_msg)
                     self.send_msg(conn, reply)
 
