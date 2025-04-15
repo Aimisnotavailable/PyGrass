@@ -14,10 +14,12 @@ class GameClient(Client):
         super().__init__(IP)
 
     def request_world_data(self, game):
+
         self.request_player_position_data(game)
         self.request_grass_position_data(game)
 
     def request_player_position_data(self, game):
+
         msg = "REQUEST_POSITION_DATA"
         self.send_msg(self.client, msg)
 
@@ -32,10 +34,16 @@ class GameClient(Client):
         self.send_msg(self.client, msg)
 
         self.send_msg(self.client, json.dumps(game.grass_update_msg))
-        print(len(self.deserialize_data(self.receive_msg(self.client))))
-    
+        deserialized_data : dict= self.deserialize_data(self.receive_msg(self.client))
+
     def deserialize_data(self, reply):
-        return json.loads(reply)
+        try:
+            obj_data = json.loads(reply)
+        except:
+            with open("test.txt", "w+") as fp:
+                fp.write(reply)
+
+        return obj_data
 
 class GameServer(Server):
 
@@ -90,16 +98,20 @@ class GameServer(Server):
                     with lock:
                         if msg['GRASS_ACTION'] == 'ADD':
                             if msg['GRASS_POS'] not in game_grass:
-                                game_grass[msg['GRASS_POS']] = Grass(msg['GRASS_POS_INT'], (0, random.randint(40, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20))
+                                game_grass[msg['GRASS_POS']] = Grass(msg['GRASS_POS_INT'])
                         else:
-                            for x in range(msg['BOUNDARY_X'][0], msg['BOUNDARY_X'][1]):
-                                for y in range(msg['BOUNDARY_Y'][0], msg['BOUNDARY_Y'][1]):
-                                    key = f"{x} ; {y}"
-                                    if key in game_grass:
-                                        grass_msg[key] = {"GRASS_POS" : game_grass[key].pos, "GRASS_COLOR" : game_grass[key].color, "GRASS_POINTS" : game_grass[key].main_leaf_points, "FLOWER" : game_grass[key].flower,}
+                            key = f'{msg["X_POS"]} ; {msg["Y_POS"]}'
+                            if key in game_grass:
+                                grass_msg[key] = {"GRASS_POS" : game_grass[key].pos, "GRASS_TYPE" : game_grass[key].type}
+                        # else:
+                        #     for x in range(msg['BOUNDARY_X'][0], msg['BOUNDARY_X'][1]):
+                        #         for y in range(msg['BOUNDARY_Y'][0], msg['BOUNDARY_Y'][1]):
+                        #             key = f"{x} ; {y}"
+                        #             if key in game_grass:
+                        #                 grass_msg[key] = {"GRASS_POS" : game_grass[key].pos, "GRASS_TYPE" : game_grass[key].type}
+                                        
                     reply = json.dumps(grass_msg)
                     self.send_msg(conn, reply)
-
 
         conn.close()
 

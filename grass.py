@@ -1,55 +1,32 @@
 import pygame
 import random
 import math
+from scripts.assets import Assets
 
-GRASS_WIDTH = 7
+GRASS_WIDTH = 10
 LIGHT_LEVELS = 8
 MAX_ROT = 50
 DIR = {'left' : -1, 'right' : 1}
 
 
 class Grass:
-    def __init__(self, pos=(0, 0), color=(0, 255, 0),  flower = False, height=20):
+    def __init__(self, pos=(0, 0)):
+        assets = Assets().assets
+        self.type = random.randint(0, len(assets['img']['grass']) - 1)
+        
+        self. img = assets['img']['grass'][self.type]
         self.pos : list = list(pos)
-        self.height = height
 
         self.at_rest_angle = random.randint(-20, 20)
 
         self.direction = random.choice([1, -1])
         
-        self.main_leaf_points = [[GRASS_WIDTH * max(0.3, random.random() - 0.5), self.height * (random.random() + 0.5)], [GRASS_WIDTH // max(1, (3 * random.random() + 0.5)) , random.random()], [GRASS_WIDTH * 0.8, self.height * (random.random() + 0.5)], [GRASS_WIDTH // max(1.4, (3 * random.random() + 0.5)), self.height]]
-
-        self.img = pygame.Surface((GRASS_WIDTH, self.height), pygame.SRCALPHA)
-        self.img_touch = pygame.Surface((GRASS_WIDTH, self.height), pygame.SRCALPHA)
         self.touch_force = 0
 
         self.render_img = self.img
 
         self.total_force = 0
         self.current_rot = 0
-
-        self.flower = False
-
-        if flower:
-            self.flower = True
-            self.flower_color = (255, 255, 0)
-
-        self.color = color
-        self.shadow_color = (self.color[0], self.color[1] - 40, self.color[2])
-
-        self.img.fill((0, 0, 0, 0))
-
-        pygame.draw.polygon(self.img, self.color, self.main_leaf_points)
-        pygame.draw.polygon(self.img_touch, self.shadow_color, self.main_leaf_points)
-
-        if self.flower:
-            flower_points = [self.main_leaf_points[0], self.main_leaf_points[1], self.main_leaf_points[2]]
-            pygame.draw.polygon(self.img, self.flower_color, flower_points)
-            pygame.draw.polygon(self.img_touch, self.flower_color, flower_points)
-
-
-    def set_render_img(self):
-        self.render_img = self.img_touch
 
     def rect(self):
         return pygame.Rect(*self.pos, *self.img.get_size())

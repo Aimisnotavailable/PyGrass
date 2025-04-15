@@ -7,6 +7,7 @@ from grass import Grass, Wind, GRASS_WIDTH
 from gamehandler import GameClient, GameServer, game_grass
 from scripts.engine import Engine
 from scripts.camera import Follow
+from scripts.assets import Assets
 
 RADIUS = 5
 
@@ -55,7 +56,6 @@ class Window(Engine):
         self.flip = 1
 
         self.wind = Wind(x_pos=self.display.get_width(), speed=100)
-
     def run(self):
         global game_grass
 
@@ -117,7 +117,7 @@ class Window(Engine):
                             pos = (m_rect[0] + x, m_rect[1] + y)
                             g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
                             if g_pos not in game_grass:
-                                    game_grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(40, 255), 0), flower=True if random.randint(0, 100) < 12 else False, height=random.randint(10, 20)) 
+                                    game_grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH)) 
 
             self.wind.update(dt, render_scroll)
             self.wind.render(self.display, render_scroll)
@@ -145,7 +145,6 @@ class Window(Engine):
                                 else:
                                     dir = 'left'
                                 grass.set_touch_rot(dir, dt)
-                                grass.set_render_img()
                             else:
                                 grass.update(dt, wind_force)
 

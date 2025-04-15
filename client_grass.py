@@ -120,44 +120,36 @@ class Window(Engine):
 
             self.wind.update(dt, render_scroll)
             self.wind.render(self.display, render_scroll)
-
+            
             for x in range(self.world_boundary_x[0], self.world_boundary_x[1]):
                 for y in range(self.world_boundary_y[0], self.world_boundary_y[1]):
                     g_pos = f"{x} ; {y}"
                     grass = None
 
-                    # if g_pos in self.grass:
-                    #     print(self.grass[g_pos])
-                    #     grass : Grass = self.grass[g_pos]
-                    # else: 
-                    #     request_msg = {"GRASS_ACTION" : "", "KEY" : g_pos}
-                    #     grass_data = CLIENT.request_grass_position_data(request_msg)
-                    #     print(grass_data)
-                    #     if grass_data['GRASS_EXIST']:
-                    #         grass : Grass = Grass(grass_data['GRASS_POS'], grass_data['GRASS_COLOR'], grass_data['FLOWER'])
+                    if g_pos in self.grass:
+                        grass : Grass = self.grass[g_pos]
 
-                    # if grass:
-                    #     grass_rect = grass.rect()
-                    #     wind_force = 0
+                    if grass:
+                        grass_rect = grass.rect()
+                        wind_force = 0
 
-                    #     if self.wind.dir == "left":
-                    #         if x > (self.wind.x_pos) // GRASS_WIDTH:
-                    #             wind_force = self.wind.speed
-                    #     elif self.wind.dir == "right":
-                    #         if x < (self.wind.x_pos + self.wind.length * GRASS_WIDTH) // GRASS_WIDTH:
-                    #             wind_force = -self.wind.speed
+                        if self.wind.dir == "left":
+                            if x > (self.wind.x_pos) // GRASS_WIDTH:
+                                wind_force = self.wind.speed
+                        elif self.wind.dir == "right":
+                            if x < (self.wind.x_pos + self.wind.length * GRASS_WIDTH) // GRASS_WIDTH:
+                                wind_force = -self.wind.speed
                         
-                    #     if m_rect.colliderect(grass_rect):
-                    #         if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
-                    #             dir = 'right'
-                    #         else:
-                    #             dir = 'left'
-                    #         grass.set_touch_rot(dir, dt)
-                    #         grass.set_render_img()
-                    #     else:
-                    #         grass.update(dt, wind_force)
+                        if m_rect.colliderect(grass_rect):
+                            if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
+                                dir = 'right'
+                            else:
+                                dir = 'left'
+                            grass.set_touch_rot(dir, dt)
+                        else:
+                            grass.update(dt, wind_force)
 
-                    #     grass.render((0, 255, 0), self.display, render_scroll)
+                        grass.render((0, 255, 0), self.display, render_scroll)
 
             if self.force > 0:
                 self.force = max(0, self.force - (self.force * dt))
