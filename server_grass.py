@@ -32,7 +32,7 @@ class Window(Engine):
         super().__init__()
 
         pygame.mouse.set_visible(False)
-
+        pygame.display.set_caption("SERVER")
         self.display_2 = pygame.Surface((300, 200))
         self.insert = False
         self.delete = False
@@ -56,6 +56,8 @@ class Window(Engine):
         self.flip = 1
 
         self.wind = Wind(x_pos=self.display.get_width(), speed=100)
+        self.player_id = "SERVER"
+
     def run(self):
         global game_grass
 
@@ -82,7 +84,8 @@ class Window(Engine):
             # elif mpos[1] <= 5:
             #     self.mouse_offset[1] -= 300 * dt
 
-            render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
+            render_scroll = (0, 0)
+            # render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
             m_rect = self.mouse_surf.get_rect(center=[mpos[0] + render_scroll[0], mpos[1] + render_scroll[1]])
 
             if not int(self.force):
@@ -120,7 +123,7 @@ class Window(Engine):
                                     game_grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH)) 
 
             self.wind.update(dt, render_scroll)
-            self.wind.render(self.display, render_scroll)
+            # self.wind.render(self.display, render_scroll)
 
             with lock:
                 for x in range(world_boundary_x[0], world_boundary_x[1]):
@@ -148,7 +151,8 @@ class Window(Engine):
                             else:
                                 grass.update(dt, wind_force)
 
-                            grass.render((0, 255, 0), self.display, render_scroll)
+                            grass.render((0, 255, 0), self.display, (render_scroll[0] - self.mouse_offset[0], render_scroll[1] - self.mouse_offset[1]))
+
             self.display.blit(self.font.render(f"{self.world_pos}", True, (0, 0, 0)), (0, 0))
 
             if self.force > 0:
@@ -156,10 +160,11 @@ class Window(Engine):
             elif self.force < 0:
                 self.force = min(0, self.force - (self.force * dt))
             
-            for player in self.players.values():
+            for player_id, player in self.players.items():
                 if player:
                     p_rect = self.mouse_surf.get_rect(center=player)
                     pygame.draw.circle(self.display, (255, 255, 255), (p_rect.center[0] - self.mouse_offset[0], p_rect.center[1] - self.mouse_offset[1]) , RADIUS, 1)
+                    self.display.blit(self.font.render(player_id, True, (0, 0, 0) if self.player_id != player_id else (255, 255, 255)), (p_rect.centerx, p_rect.bottom))
 
             display_mask = pygame.mask.from_surface(self.display)
             display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 0), unsetcolor=(0, 0, 0, 0))

@@ -10,11 +10,15 @@ DIR = {'left' : -1, 'right' : 1}
 
 
 class Grass:
-    def __init__(self, pos=(0, 0)):
+    def __init__(self, pos=(0, 0), type=-1):
         assets = Assets().assets
         self.type = random.randint(0, len(assets['img']['grass']) - 1)
-        
-        self. img = assets['img']['grass'][self.type]
+
+        if type == -1:
+            self.img = assets['img']['grass'][self.type]
+        else:
+            self.img = assets['img']['grass'][type]
+
         self.pos : list = list(pos)
 
         self.at_rest_angle = random.randint(-20, 20)

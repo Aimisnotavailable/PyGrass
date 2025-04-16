@@ -4,6 +4,7 @@ import random
 import json
 from abc import ABC, abstractmethod
 
+
 class NetworkHandler(ABC):
     
     def __init__(self, IP):
@@ -48,7 +49,9 @@ class Server(NetworkHandler):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind(self.ADDR)
 
-    def __generate_id__(self):
+    def __generate_id__(self, client_count):
+        return "PLAYER " + str(client_count)
+    
         return "".join([chr(random.randint(65, 122)) for i in range(30)])
     
     def handle_client(self, conn : socket.socket, addr : str, client_id = ""):

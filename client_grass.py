@@ -36,7 +36,9 @@ class Window(Engine):
         self.insert = False
         self.delete = False
         self.world_pos = [0, 0]
-        
+
+        pygame.display.set_caption("CLIENT")
+
         self.players = {}
         self.id = ""
         self.grass : dict[str:Grass] = {}
@@ -44,7 +46,6 @@ class Window(Engine):
         self.world_boundary_x = [0, 0]
         self.world_boundary_y = [0, 0]
         
-
         self.grass_update_msg = {'GRASS_ACTION' : "", "BOUNDARY_X" : self.world_boundary_x, "BOUNDARY_Y" : self.world_boundary_y}
 
         self.force = 0
@@ -57,6 +58,30 @@ class Window(Engine):
         self.flip = 1
 
         self.wind = Wind(x_pos=self.display.get_width(), speed=100)
+        CLIENT.request_wind_position_data(self)
+        self.player_id = CLIENT.request_played_id()
+
+    def __apply_force_updates__(self, grass : Grass, x_pos, y_pos, m_rect, dt, render_scroll=[0, 0]):
+        grass_rect = grass.rect()
+        wind_force = 0
+
+        if self.wind.dir == "left":
+            if x_pos > (self.wind.x_pos) // GRASS_WIDTH:
+                wind_force = self.wind.speed
+        elif self.wind.dir == "right":
+            if x_pos < (self.wind.x_pos + self.wind.length * GRASS_WIDTH) // GRASS_WIDTH:
+                wind_force = -self.wind.speed
+        
+        if m_rect.colliderect(grass_rect):
+            if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
+                dir = 'right'
+            else:
+                dir = 'left'
+            grass.set_touch_rot(dir, dt)
+        else:
+            grass.update(dt, wind_force)
+
+        grass.render((0, 255, 0), self.display, (render_scroll[0] - self.mouse_offset[0], render_scroll[1] - self.mouse_offset[1]))
 
     def run(self):
         while True:
@@ -79,10 +104,10 @@ class Window(Engine):
             #     self.mouse_offset[1] += 300 * dt
             # elif mpos[1] <= 5:
             #     self.mouse_offset[1] -= 300 * dt
-
-            render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
+            render_scroll = (0, 0)
+            # render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
             m_rect = self.mouse_surf.get_rect(center=[mpos[0] + render_scroll[0], mpos[1] + render_scroll[1]])
-            
+
             if not int(self.force):
                 self.flip *= -1
                 self.force = 100 * self.flip
@@ -109,7 +134,7 @@ class Window(Engine):
             self.world_boundary_y = [render_scroll[1] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[1] + self.display.get_height()) // GRASS_WIDTH + GRASS_WIDTH]
             self.grass_update_msg = {'GRASS_ACTION' : "", "BOUNDARY_X" : self.world_boundary_x, "BOUNDARY_Y" : self.world_boundary_y}
             
-            CLIENT.request_world_data(self)
+            
             # if self.insert:
             #     for x in range(0, int(RADIUS * 2)):
             #         for y in range(0, int(RADIUS * 2)):
@@ -117,49 +142,46 @@ class Window(Engine):
             #             g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
             #             if g_pos not in self.grass:
             #                 self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(40, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20)) 
-
-            self.wind.update(dt, render_scroll)
-            self.wind.render(self.display, render_scroll)
             
+            self.wind.update(dt, render_scroll=render_scroll)
+
+            CLIENT.request_player_position_data(self)
+            #CLIENT.request_wind_position_data(self)
+
+            req_msg = {"GRASS_ACTION" : "", "KEY" : []}
+
             for x in range(self.world_boundary_x[0], self.world_boundary_x[1]):
                 for y in range(self.world_boundary_y[0], self.world_boundary_y[1]):
+                    
                     g_pos = f"{x} ; {y}"
                     grass = None
 
                     if g_pos in self.grass:
                         grass : Grass = self.grass[g_pos]
+                    else:
+                        req_msg['KEY'].append(g_pos)
 
                     if grass:
-                        grass_rect = grass.rect()
-                        wind_force = 0
+                        self.__apply_force_updates__(grass, x, y, m_rect=m_rect, dt=dt, render_scroll=render_scroll)
 
-                        if self.wind.dir == "left":
-                            if x > (self.wind.x_pos) // GRASS_WIDTH:
-                                wind_force = self.wind.speed
-                        elif self.wind.dir == "right":
-                            if x < (self.wind.x_pos + self.wind.length * GRASS_WIDTH) // GRASS_WIDTH:
-                                wind_force = -self.wind.speed
-                        
-                        if m_rect.colliderect(grass_rect):
-                            if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
-                                dir = 'right'
-                            else:
-                                dir = 'left'
-                            grass.set_touch_rot(dir, dt)
-                        else:
-                            grass.update(dt, wind_force)
-
-                        grass.render((0, 255, 0), self.display, render_scroll)
-
+            if len(req_msg['KEY']):
+                reply = CLIENT.request_grass_position_data(req_msg=req_msg)
+                if len(reply):
+                    for key, data in reply.items():
+                        if data["REPLY"] == "EXIST":
+                            grass : Grass = Grass(data["GRASS_POS"], type=data["GRASS_TYPE"])
+                            self.grass[key] = grass
+                            
             if self.force > 0:
                 self.force = max(0, self.force - (self.force * dt))
             elif self.force < 0:
                 self.force = min(0, self.force - (self.force * dt))
 
-            for player in self.players.values():
+            for player_id, player in self.players.items():
                 if player:
                     p_rect = self.mouse_surf.get_rect(center=player)
                     pygame.draw.circle(self.display, (255, 255, 255), (p_rect.center[0] - self.mouse_offset[0], p_rect.center[1] - self.mouse_offset[1]) , RADIUS, 1)
+                    self.display.blit(self.font.render(player_id, True, (0, 0, 0) if self.player_id != player_id else (255, 255, 255)), (p_rect.centerx, p_rect.bottom))
 
             display_mask = pygame.mask.from_surface(self.display)
             display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 0), unsetcolor=(0, 0, 0, 0))
