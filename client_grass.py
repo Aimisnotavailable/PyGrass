@@ -181,7 +181,9 @@ class Window(Engine):
                 if player:
                     p_rect = self.mouse_surf.get_rect(center=player)
                     pygame.draw.circle(self.display, (255, 255, 255), (p_rect.center[0] - self.mouse_offset[0], p_rect.center[1] - self.mouse_offset[1]) , RADIUS, 1)
-                    self.display.blit(self.font.render(player_id, True, (0, 0, 0) if self.player_id != player_id else (255, 255, 255)), (p_rect.centerx, p_rect.bottom))
+                    id_surf = self.font.render(player_id, True, (0, 0, 0) if self.player_id != player_id else (255, 255, 255))
+                    id_rect = id_surf.get_rect(center=(p_rect.centerx, p_rect.bottom))
+                    self.display.blit(id_surf, id_rect)
 
             display_mask = pygame.mask.from_surface(self.display)
             display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 0), unsetcolor=(0, 0, 0, 0))

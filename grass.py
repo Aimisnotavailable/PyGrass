@@ -3,7 +3,7 @@ import random
 import math
 from scripts.assets import Assets
 
-GRASS_WIDTH = 10
+GRASS_WIDTH = 20
 LIGHT_LEVELS = 8
 MAX_ROT = 50
 DIR = {'left' : -1, 'right' : 1}
@@ -11,13 +11,19 @@ DIR = {'left' : -1, 'right' : 1}
 
 class Grass:
     def __init__(self, pos=(0, 0), type=-1):
-        assets = Assets().assets
-        self.type = random.randint(0, len(assets['img']['grass']) - 1)
+        self.current_count = 0
+
+        self.tile_img = pygame.Surface((GRASS_WIDTH, GRASS_WIDTH), pygame.SRCALPHA)
+        self.tile_img.fill((0, 0, 0, 0))
+        self.assets = Assets().assets
+        self.type = random.randint(0, len(self.assets['img']['grass']) - 1)
 
         if type == -1:
-            self.img = assets['img']['grass'][self.type]
+            self.img = self.assets['img']['grass'][self.type]
         else:
-            self.img = assets['img']['grass'][type]
+            self.img = self.assets['img']['grass'][type]
+
+        self.add_blade(self.img)
 
         self.pos : list = list(pos)
 
@@ -27,27 +33,35 @@ class Grass:
         
         self.touch_force = 0
 
-        self.render_img = self.img
+        self.render_img = self.tile_img
+        self.render_img.fill((0, 0, 0, 0))
 
         self.total_force = 0
         self.current_rot = 0
 
+    def add_blade(self, img : pygame.Surface=None):
+    
+        if not img:
+            img =  self.assets['img']['grass'][random.randint(0, len(self.assets['img']['grass'])-1)]
+        
+        self.tile_img.blit(self.img, (random.randint(0, (self.tile_img.get_height() * 0.7)), random.randint(0, int(self.tile_img.get_height() * 0.7))))
+        self.current_count += 1
+            
     def rect(self):
         return pygame.Rect(*self.pos, *self.img.get_size())
     
     def update(self, dt = 0, wind_force = 10):
-        self.render_img = self.img
         
         if wind_force > 0:
             self.current_rot = min(MAX_ROT, self.current_rot + wind_force * dt)
         else:
             self.current_rot = max(-MAX_ROT, self.current_rot + wind_force * dt)
 
-        if wind_force == 0:
-            if self.current_rot > 0 :
-                self.current_rot = max(self.at_rest_angle, self.current_rot - MAX_ROT * 2 * dt)
-            else:
-                self.current_rot = min(self.at_rest_angle, self.current_rot + MAX_ROT * 2 * dt)
+        # if wind_force == 0:
+        #     if self.current_rot > 0 :
+        #         self.current_rot = max(self.at_rest_angle, self.current_rot - MAX_ROT * 2 * dt)
+        #     else:
+        #         self.current_rot = min(self.at_rest_angle, self.current_rot + MAX_ROT * 2 * dt)
 
     def set_touch_rot(self, dir, dt):
         if dir == "left":
@@ -59,6 +73,7 @@ class Grass:
         img = pygame.transform.rotate(self.render_img, self.current_rot)
         img_rect = img.get_rect(center=(self.pos[0] + math.cos(math.radians(self.current_rot)), self.pos[1] + math.sin(math.radians(self.current_rot))))
         surf.blit(img, (img_rect[0] - render_scroll[0], img_rect[1] - render_scroll[1]))
+
 
 class Wind:
 
