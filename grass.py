@@ -3,29 +3,57 @@ import random
 import math
 from scripts.assets import Assets
 
-GRASS_WIDTH = 20
+GRASS_WIDTH = 10
 LIGHT_LEVELS = 8
 MAX_ROT = 50
 DIR = {'left' : -1, 'right' : 1}
 
 
-class Grass:
-    def __init__(self, pos=(0, 0), type=-1):
-        self.current_count = 0
+class GrassTile:
+
+    def __init__(self, pos):
+        self.pos = pos
+
+        self.grass : list[Grass] = []
+        self.assets = Assets().assets
 
         self.tile_img = pygame.Surface((GRASS_WIDTH, GRASS_WIDTH), pygame.SRCALPHA)
+        self.current_count = 0
+        
+    def add_blade(self, img):
+        self.grass.append(Grass((random.random() * GRASS_WIDTH, random.random() * GRASS_WIDTH, ), random.randint(len(self.assets['img']['grass']) - 1)))
+        self.current_count += 1
+
+    def update_blades(self, dt = 0, wind_force = 10):
+
+        for grass in self.grass:
+            grass.update(dt, wind_force=wind_force)
+
+    def render_blades(self, surf : pygame.Surface):
+
+        for grass in self.grass:
+            grass.render(surf)
+
+    def update(self, dt = 0, wind_force = 10):
         self.tile_img.fill((0, 0, 0, 0))
+
+        self.update_blades(dt, wind_force=10)
+    
+    def render(self, surf : pygame.Surface, render_scroll=(0, 0)):
+        
+        self.render_blades(self.tile_img)
+        surf.blit(self.tile_img, self.pos)
+
+class Grass:
+    def __init__(self, pos=(0, 0), type=-1, grass_tile : GrassTile = None):
+        self.current_count = 0
+        self.grass_tile = grass_tile
         self.assets = Assets().assets
-        self.type = random.randint(0, len(self.assets['img']['grass']) - 1)
 
-        if type == -1:
-            self.img = self.assets['img']['grass'][self.type]
-        else:
-            self.img = self.assets['img']['grass'][type]
-
-        self.add_blade(self.img)
+        self.img : pygame.Surface = self.assets['img']['grass'][type]
 
         self.pos : list = list(pos)
+        self.world_pos = [self.grass_tile.pos[0] + self.pos[0], self.grass_tile.pos[1] + self.pos[1]]
 
         self.at_rest_angle = random.randint(-20, 20)
 
@@ -33,22 +61,11 @@ class Grass:
         
         self.touch_force = 0
 
-        self.render_img = self.tile_img
-        self.render_img.fill((0, 0, 0, 0))
-
         self.total_force = 0
         self.current_rot = 0
 
-    def add_blade(self, img : pygame.Surface=None):
-    
-        if not img:
-            img =  self.assets['img']['grass'][random.randint(0, len(self.assets['img']['grass'])-1)]
-        
-        self.tile_img.blit(self.img, (random.randint(0, (self.tile_img.get_height() * 0.7)), random.randint(0, int(self.tile_img.get_height() * 0.7))))
-        self.current_count += 1
-            
     def rect(self):
-        return pygame.Rect(*self.pos, *self.img.get_size())
+        return pygame.Rect(*self.world_pos *self.img.get_size())
     
     def update(self, dt = 0, wind_force = 10):
         
@@ -69,10 +86,12 @@ class Grass:
         elif dir == "right":
             self.current_rot = self.current_rot = max(-MAX_ROT, self.current_rot - MAX_ROT * 3 * dt)
         
-    def render(self, color, surf : pygame.Surface, render_scroll=(0, 0)):
-        img = pygame.transform.rotate(self.render_img, self.current_rot)
+    def render(self, surf : pygame.Surface):
+
+        img = pygame.transform.rotate(self.img, self.current_rot)
         img_rect = img.get_rect(center=(self.pos[0] + math.cos(math.radians(self.current_rot)), self.pos[1] + math.sin(math.radians(self.current_rot))))
-        surf.blit(img, (img_rect[0] - render_scroll[0], img_rect[1] - render_scroll[1]))
+
+        surf.blit(img, (img_rect[0], img_rect[1]))
 
 
 class Wind:
