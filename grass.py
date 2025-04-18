@@ -17,25 +17,42 @@ class GrassTile:
     def __init__(self, pos):
         self.pos = pos
 
-        self.grass : list[Grass] = []
+        self.grass : dict[str, Grass] = {}
+
         self.assets = Assets().assets
 
         self.tile_img = pygame.Surface((GRASS_WIDTH + PADDING, GRASS_WIDTH + PADDING), pygame.SRCALPHA)
         self.current_count = 0
+        self.available_x_pos = [i for i in range(GRASS_WIDTH)]
+        self.available_y_pos = [i for i in range(GRASS_WIDTH)]
         
-    def add_blade(self):
+    def add_blade(self, grass_data={}):
+        if not len(grass_data):
 
-        self.grass.append(Grass((random.randint(0, GRASS_WIDTH), random.randint(0, GRASS_WIDTH)), random.randint(0, len(self.assets['img']['grass']) - 1), grass_tile=self))
+            x = random.choice(self.available_x_pos)
+            self.available_x_pos.remove(x)
+
+            y = random.choice(self.available_y_pos)
+            self.available_y_pos.remove(y)
+
+            grass_type = random.randint(0, len(self.assets['img']['grass']) - 1)
+
+            key = f'{x} ; {y} ; {grass_type}'
+
+            self.grass[key] = Grass((x, y), grass_type, grass_tile=self)
+        else:
+            self.grass[grass_data['KEY']] = Grass(grass_data['POS'], grass_data['TYPE'], grass_tile=self)
+            
         self.current_count += 1
 
     def update_blades(self, dt = 0, wind_force = 10):
 
-        for grass in self.grass:
+        for grass in self.grass.values():
             grass.update(dt, wind_force=wind_force)
 
     def render_blades(self, surf : pygame.Surface):
 
-        for grass in self.grass:
+        for grass in self.grass.values():
             grass.render(surf)
 
     def update(self, dt = 0, wind_force = 10):

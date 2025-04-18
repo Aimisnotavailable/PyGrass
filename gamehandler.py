@@ -123,13 +123,14 @@ class GameServer(Server):
                         else:
                             for key in msg['KEY']:
                                 if key in game_grass:
-                                    grass_msg[key] = {"REPLY" : "EXIST", "GRASS_POS" : game_grass[key].pos, "GRASS_TYPE" : game_grass[key].type}
+                                    grass_msg[key] = {"REPLY" : "EXIST", "GRASS_POS" : game_grass[key].pos, "GRASS_DATA" : list(game_grass[key].grass)}
                         # else:
                         #     for x in range(msg['BOUNDARY_X'][0], msg['BOUNDARY_X'][1]):
                         #         for y in range(msg['BOUNDARY_Y'][0], msg['BOUNDARY_Y'][1]):
                         #             key = f"{x} ; {y}"
                         #             if key in game_grass:
                         #                 grass_msg[key] = {"GRASS_POS" : game_grass[key].pos, "GRASS_TYPE" : game_grass[key].type}
+
                     reply = json.dumps(grass_msg)
                     self.send_msg(conn, reply)
 

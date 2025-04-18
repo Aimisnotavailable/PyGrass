@@ -123,7 +123,7 @@ class Window(Engine):
                             if g_pos not in game_grass:
                                 game_grass[g_pos] = GrassTile(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH))
                             else:
-                                if game_grass[g_pos].current_count <= 20:
+                                if game_grass[g_pos].current_count < 20:
                                     game_grass[g_pos].add_blade()
 
             self.wind.update(dt, render_scroll)
@@ -145,7 +145,7 @@ class Window(Engine):
                                 if x < (self.wind.x_pos + self.wind.length * GRASS_WIDTH) // GRASS_WIDTH:
                                     wind_force = -self.wind.speed * 0.4
 
-                            for grass in grass_tile.grass:
+                            for grass in grass_tile.grass.values():
                                 grass_rect = grass.rect()
                                 if m_rect.colliderect(grass_rect):
                                     if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
@@ -156,7 +156,7 @@ class Window(Engine):
                             
                             grass_tile.update(dt, wind_force=wind_force)
                             grass_tile.render(self.display, render_scroll=render_scroll)
-
+                            
             self.display.blit(self.font.render(f"{self.world_pos}", True, (0, 0, 0)), (0, 0))
 
             if self.force > 0:

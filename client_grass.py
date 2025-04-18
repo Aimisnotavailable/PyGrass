@@ -3,7 +3,7 @@ import sys
 import random
 import math
 import threading
-from grass import Grass, Wind, GRASS_WIDTH
+from grass import Grass, GrassTile, Wind, GRASS_WIDTH
 from gamehandler import GameClient, game_grass
 from scripts.engine import Engine
 from scripts.camera import Follow
@@ -146,32 +146,57 @@ class Window(Engine):
             self.wind.update(dt, render_scroll=render_scroll)
 
             CLIENT.request_player_position_data(self)
-            #CLIENT.request_wind_position_data(self)
+            CLIENT.request_wind_position_data(self)
 
             req_msg = {"GRASS_ACTION" : "", "KEY" : []}
 
+
             for x in range(self.world_boundary_x[0], self.world_boundary_x[1]):
                 for y in range(self.world_boundary_y[0], self.world_boundary_y[1]):
-                    
                     g_pos = f"{x} ; {y}"
-                    grass = None
-
+                    
                     if g_pos in self.grass:
-                        grass : Grass = self.grass[g_pos]
+                        grass_tile : GrassTile = self.grass[g_pos]
+
+                        if grass_tile.current_count < 20:
+                           req_msg['KEY'].append(g_pos)
+
+                        wind_force = 0
+
+                        if self.wind.dir == "left":
+                                if x > (self.wind.x_pos) // GRASS_WIDTH:
+                                    wind_force = self.wind.speed * 0.4
+                        elif self.wind.dir == "right":
+                            if x < (self.wind.x_pos + self.wind.length * GRASS_WIDTH) // GRASS_WIDTH:
+                                wind_force = -self.wind.speed * 0.4
+
+                        for grass in grass_tile.grass.values():
+                            grass_rect = grass.rect()
+                            if m_rect.colliderect(grass_rect):
+                                if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
+                                    dir = 'right'
+                                else:
+                                    dir = 'left'
+                                grass.set_touch_rot(dir, dt)
+                        
+                        grass_tile.update(dt, wind_force=wind_force)
+                        grass_tile.render(self.display, render_scroll=render_scroll)
                     else:
                         req_msg['KEY'].append(g_pos)
-
-                    if grass:
-                        self.__apply_force_updates__(grass, x, y, m_rect=m_rect, dt=dt, render_scroll=render_scroll)
 
             if len(req_msg['KEY']):
                 reply = CLIENT.request_grass_position_data(req_msg=req_msg)
                 if len(reply):
                     for key, data in reply.items():
-                        if data["REPLY"] == "EXIST":
-                            grass : Grass = Grass(data["GRASS_POS"], type=data["GRASS_TYPE"])
-                            self.grass[key] = grass
-                            
+                        if data['REPLY'] == "EXIST":
+                            grass_tile : GrassTile = GrassTile(data['GRASS_POS'])
+                            for data in data['GRASS_DATA']:
+                                if not data in grass_tile.grass:
+                                    data_list = data.split(' ; ')
+                                    grass_data = {"KEY" : data, "POS" : [int(data_list[0]), int(data_list[1])], "TYPE" : int(data_list[2])}
+                                    grass_tile.add_blade(grass_data=grass_data)
+                            self.grass[key] = grass_tile
+
             if self.force > 0:
                 self.force = max(0, self.force - (self.force * dt))
             elif self.force < 0:
