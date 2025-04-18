@@ -3,10 +3,10 @@ import random
 import math
 from scripts.assets import Assets
 
-GRASS_WIDTH = 50
+GRASS_WIDTH = 20
 LIGHT_LEVELS = 8
-MAX_ROT = 50
-PADDING = 0
+MAX_ROT = 70
+PADDING = 20
 GPR = PADDING / GRASS_WIDTH
 
 DIR = {'left' : -1, 'right' : 1}
@@ -24,8 +24,8 @@ class GrassTile:
         self.current_count = 0
         
     def add_blade(self):
-        
-        self.grass.append(Grass((min(1 - GPR, max(GPR, random.random()))  * GRASS_WIDTH, min(1 - GPR, max(GPR, random.random()))  * GRASS_WIDTH), random.randint(0, len(self.assets['img']['grass']) - 1), grass_tile=self))
+
+        self.grass.append(Grass((random.randint(0, GRASS_WIDTH), random.randint(0, GRASS_WIDTH)), random.randint(0, len(self.assets['img']['grass']) - 1), grass_tile=self))
         self.current_count += 1
 
     def update_blades(self, dt = 0, wind_force = 10):
@@ -46,7 +46,7 @@ class GrassTile:
     def render(self, surf : pygame.Surface, render_scroll=(0, 0)):
         
         self.render_blades(self.tile_img)
-        surf.blit(self.tile_img, self.pos)
+        surf.blit(self.tile_img, (self.pos[0] - render_scroll[0], self.pos[1] - render_scroll[1]))
 
 class Grass:
     def __init__(self, pos=(0, 0), type=-1, grass_tile : GrassTile = None):
@@ -78,11 +78,11 @@ class Grass:
         else:
             self.current_rot = max(-MAX_ROT, self.current_rot + wind_force * dt)
 
-        # if wind_force == 0:
-        #     if self.current_rot > 0 :
-        #         self.current_rot = max(self.at_rest_angle, self.current_rot - MAX_ROT * 2 * dt)
-        #     else:
-        #         self.current_rot = min(self.at_rest_angle, self.current_rot + MAX_ROT * 2 * dt)
+        if wind_force == 0:
+            if self.current_rot > 0 :
+                self.current_rot = max(self.at_rest_angle, self.current_rot - MAX_ROT * 2 * dt)
+            else:
+                self.current_rot = min(self.at_rest_angle, self.current_rot + MAX_ROT * 2 * dt)
 
     def set_touch_rot(self, dir, dt):
         if dir == "left":
@@ -95,7 +95,7 @@ class Grass:
         img = pygame.transform.rotate(self.img, self.current_rot)
         img_rect = img.get_rect(center=(self.pos[0] + math.cos(math.radians(self.current_rot)), self.pos[1] + math.sin(math.radians(self.current_rot))))
 
-        surf.blit(img, (img_rect[0], img_rect[1]))
+        surf.blit(img, (img_rect[0] + PADDING // 2, img_rect[1] + PADDING // 2))
 
 
 class Wind:

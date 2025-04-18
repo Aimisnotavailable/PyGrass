@@ -100,6 +100,7 @@ class Window(Engine):
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
                         self.insert = True
+                        
                     if event.button == 3:
                         self.delete = True
                 
@@ -122,8 +123,7 @@ class Window(Engine):
                             if g_pos not in game_grass:
                                 game_grass[g_pos] = GrassTile(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH))
                             else:
-                                if game_grass[g_pos].current_count <= 200:
-                                    print(game_grass[g_pos].current_count)
+                                if game_grass[g_pos].current_count <= 20:
                                     game_grass[g_pos].add_blade()
 
             self.wind.update(dt, render_scroll)
