@@ -1,12 +1,12 @@
 import threading
 import json
 import random
-from grass import Grass, GRASS_WIDTH
+from grass import Grass, GrassTile, GRASS_WIDTH
 from networkHandler import Client, Server
 # from main import Window
 
 lock = threading.Lock()
-game_grass = {}
+game_grass : dict[str, GrassTile] = {}
 
 class GameClient(Client):
 

@@ -3,9 +3,12 @@ import random
 import math
 from scripts.assets import Assets
 
-GRASS_WIDTH = 10
+GRASS_WIDTH = 50
 LIGHT_LEVELS = 8
 MAX_ROT = 50
+PADDING = 0
+GPR = PADDING / GRASS_WIDTH
+
 DIR = {'left' : -1, 'right' : 1}
 
 
@@ -17,11 +20,12 @@ class GrassTile:
         self.grass : list[Grass] = []
         self.assets = Assets().assets
 
-        self.tile_img = pygame.Surface((GRASS_WIDTH, GRASS_WIDTH), pygame.SRCALPHA)
+        self.tile_img = pygame.Surface((GRASS_WIDTH + PADDING, GRASS_WIDTH + PADDING), pygame.SRCALPHA)
         self.current_count = 0
         
-    def add_blade(self, img):
-        self.grass.append(Grass((random.random() * GRASS_WIDTH, random.random() * GRASS_WIDTH, ), random.randint(len(self.assets['img']['grass']) - 1)))
+    def add_blade(self):
+        
+        self.grass.append(Grass((min(1 - GPR, max(GPR, random.random()))  * GRASS_WIDTH, min(1 - GPR, max(GPR, random.random()))  * GRASS_WIDTH), random.randint(0, len(self.assets['img']['grass']) - 1), grass_tile=self))
         self.current_count += 1
 
     def update_blades(self, dt = 0, wind_force = 10):
@@ -37,7 +41,7 @@ class GrassTile:
     def update(self, dt = 0, wind_force = 10):
         self.tile_img.fill((0, 0, 0, 0))
 
-        self.update_blades(dt, wind_force=10)
+        self.update_blades(dt, wind_force=wind_force)
     
     def render(self, surf : pygame.Surface, render_scroll=(0, 0)):
         
@@ -65,7 +69,7 @@ class Grass:
         self.current_rot = 0
 
     def rect(self):
-        return pygame.Rect(*self.world_pos *self.img.get_size())
+        return pygame.Rect(*self.world_pos, *self.img.get_size())
     
     def update(self, dt = 0, wind_force = 10):
         
@@ -82,9 +86,9 @@ class Grass:
 
     def set_touch_rot(self, dir, dt):
         if dir == "left":
-            self.current_rot = self.current_rot = min(MAX_ROT, self.current_rot + MAX_ROT * 3 * dt)
+            self.current_rot = self.current_rot = min(MAX_ROT, self.current_rot + MAX_ROT * 10 * dt)
         elif dir == "right":
-            self.current_rot = self.current_rot = max(-MAX_ROT, self.current_rot - MAX_ROT * 3 * dt)
+            self.current_rot = self.current_rot = max(-MAX_ROT, self.current_rot - MAX_ROT * 10 * dt)
         
     def render(self, surf : pygame.Surface):
 

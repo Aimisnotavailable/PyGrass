@@ -3,13 +3,13 @@ import sys
 import random
 import math
 import threading
-from grass import Grass, Wind, GRASS_WIDTH
+from grass import Grass, GrassTile, Wind, GRASS_WIDTH
 from gamehandler import GameClient, GameServer, game_grass
 from scripts.engine import Engine
 from scripts.camera import Follow
 from scripts.assets import Assets
 
-RADIUS = 5
+RADIUS = 20
 
 RESISTANCE = 20
 
@@ -59,7 +59,7 @@ class Window(Engine):
         self.player_id = "SERVER"
 
     def run(self):
-        global game_grass
+        global game_grass 
 
         while True:
             self.display.fill((0, 0, 0, 0))
@@ -120,9 +120,9 @@ class Window(Engine):
                             pos = (m_rect[0] + x, m_rect[1] + y)
                             g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
                             if g_pos not in game_grass:
-                                game_grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH))
+                                game_grass[g_pos] = GrassTile(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH))
                             else:
-                                if game_grass[g_pos].current_count <= 20:
+                                if game_grass[g_pos].current_count <= 200:
                                     print(game_grass[g_pos].current_count)
                                     game_grass[g_pos].add_blade()
 
@@ -135,27 +135,27 @@ class Window(Engine):
                         g_pos = f"{x} ; {y}"
                         
                         if g_pos in game_grass:
-                            grass : Grass = game_grass[g_pos]
-                            grass_rect = grass.rect()
+                            grass_tile : GrassTile = game_grass[g_pos]
                             wind_force = 0
 
                             if self.wind.dir == "left":
-                                if x > (self.wind.x_pos) // GRASS_WIDTH:
-                                    wind_force = self.wind.speed * 0.4
+                                    if x > (self.wind.x_pos) // GRASS_WIDTH:
+                                        wind_force = self.wind.speed * 0.4
                             elif self.wind.dir == "right":
                                 if x < (self.wind.x_pos + self.wind.length * GRASS_WIDTH) // GRASS_WIDTH:
                                     wind_force = -self.wind.speed * 0.4
-                            
-                            if m_rect.colliderect(grass_rect):
-                                if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
-                                    dir = 'right'
-                                else:
-                                    dir = 'left'
-                                grass.set_touch_rot(dir, dt)
-                            else:
-                                grass.update(dt, wind_force)
 
-                            grass.render((0, 255, 0), self.display, (render_scroll[0] - self.mouse_offset[0], render_scroll[1] - self.mouse_offset[1]))
+                            for grass in grass_tile.grass:
+                                grass_rect = grass.rect()
+                                if m_rect.colliderect(grass_rect):
+                                    if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
+                                        dir = 'right'
+                                    else:
+                                        dir = 'left'
+                                    grass.set_touch_rot(dir, dt)
+                            
+                            grass_tile.update(dt, wind_force=wind_force)
+                            grass_tile.render(self.display, render_scroll=render_scroll)
 
             self.display.blit(self.font.render(f"{self.world_pos}", True, (0, 0, 0)), (0, 0))
 
