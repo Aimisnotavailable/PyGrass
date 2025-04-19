@@ -104,6 +104,7 @@ class GameServer(Server):
                 if msg == "REQUEST_POSITION_DATA":
                     
                     msg = self.receive_msg(conn)
+                    print("MESSAGE: ", msg)
                     self.game.players[client_id] = json.loads(msg)
 
                     players = self.game.players.copy()
