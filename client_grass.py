@@ -8,7 +8,7 @@ from gamehandler import GameClient, game_grass
 from scripts.engine import Engine
 from scripts.camera import Follow
 
-RADIUS = 5
+RADIUS = 20
 
 RESISTANCE = 20
 
@@ -149,7 +149,14 @@ class Window(Engine):
             CLIENT.request_wind_position_data(self)
 
             req_msg = {"GRASS_ACTION" : "", "KEY" : []}
+            p_rects = []
+            p_ids = []
 
+            for player_id, player in self.players.items():
+                if player:
+                    p_rect = self.mouse_surf.get_rect(center=player)
+                    p_rects.append(p_rect)
+                    p_ids.append(player_id)
 
             for x in range(self.world_boundary_x[0], self.world_boundary_x[1]):
                 for y in range(self.world_boundary_y[0], self.world_boundary_y[1]):
@@ -172,12 +179,13 @@ class Window(Engine):
 
                         for grass in grass_tile.grass.values():
                             grass_rect = grass.rect()
-                            if m_rect.colliderect(grass_rect):
-                                if (m_rect[0] + m_rect[2] // 2) <= grass_rect[0]:
-                                    dir = 'right'
-                                else:
-                                    dir = 'left'
-                                grass.set_touch_rot(dir, dt)
+                            for p_rect in p_rects:
+                                if p_rect.colliderect(grass_rect):
+                                    if (p_rect[0] + p_rect[2] // 2) <= grass_rect[0]:
+                                        dir = 'right'
+                                    else:
+                                        dir = 'left'
+                                    grass.set_touch_rot(dir, dt)
                         
                         grass_tile.update(dt, wind_force=wind_force)
                         grass_tile.render(self.display, render_scroll=render_scroll)
@@ -202,13 +210,12 @@ class Window(Engine):
             elif self.force < 0:
                 self.force = min(0, self.force - (self.force * dt))
 
-            for player_id, player in self.players.items():
-                if player:
-                    p_rect = self.mouse_surf.get_rect(center=player)
-                    pygame.draw.circle(self.display, (255, 255, 255), (p_rect.center[0] - self.mouse_offset[0], p_rect.center[1] - self.mouse_offset[1]) , RADIUS, 1)
-                    id_surf = self.font.render(player_id, True, (0, 0, 0) if self.player_id != player_id else (255, 255, 255))
-                    id_rect = id_surf.get_rect(center=(p_rect.centerx, p_rect.bottom))
-                    self.display.blit(id_surf, id_rect)
+            
+            for player_id, p_rect in zip(p_ids, p_rects):
+                pygame.draw.circle(self.display, (255, 255, 255), (p_rect.center[0] - self.mouse_offset[0], p_rect.center[1] - self.mouse_offset[1]) , RADIUS, 1)
+                id_surf = self.font.render(player_id, True, (0, 0, 0) if self.player_id != player_id else (255, 255, 255))
+                id_rect = id_surf.get_rect(center=(p_rect.centerx, p_rect.bottom))
+                self.display.blit(id_surf, id_rect)
 
             display_mask = pygame.mask.from_surface(self.display)
             display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 0), unsetcolor=(0, 0, 0, 0))
