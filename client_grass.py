@@ -58,8 +58,9 @@ class Window(Engine):
         self.flip = 1
 
         self.wind = Wind(x_pos=self.display.get_width(), speed=100)
-        # CLIENT.request_wind_position_data(self)
+        CLIENT.request_wind_position_data(self)
         self.player_id = CLIENT.request_played_id()
+        self.buffer = -0.1
 
     def __apply_force_updates__(self, grass : Grass, x_pos, y_pos, m_rect, dt, render_scroll=[0, 0]):
         grass_rect = grass.rect()
@@ -145,9 +146,7 @@ class Window(Engine):
             
             self.wind.update(dt, render_scroll=render_scroll)
 
-            CLIENT.request_player_position_data(self)
-            # CLIENT.request_wind_position_data(self)
-
+            
             req_msg = {"GRASS_ACTION" : "", "KEY" : []}
             p_rects = []
             p_ids = []
@@ -192,18 +191,21 @@ class Window(Engine):
                     else:
                         req_msg['KEY'].append(g_pos)
 
-            # if len(req_msg['KEY']):
-            #     reply = CLIENT.request_grass_position_data(req_msg=req_msg)
-            #     if len(reply):
-            #         for key, data in reply.items():
-            #             if data['REPLY'] == "EXIST":
-            #                 grass_tile : GrassTile = GrassTile(data['GRASS_POS'])
-            #                 for data in data['GRASS_DATA']:
-            #                     if not data in grass_tile.grass:
-            #                         data_list = data.split(' ; ')
-            #                         grass_data = {"KEY" : data, "POS" : [int(data_list[0]), int(data_list[1])], "TYPE" : int(data_list[2])}
-            #                         grass_tile.add_blade(grass_data=grass_data)
-            #                 self.grass[key] = grass_tile
+            if ((self.buffer + 0.1) % 50) == 0:
+                CLIENT.request_player_position_data(self)
+                CLIENT.request_wind_position_data(self)
+                if len(req_msg['KEY']):
+                    reply = CLIENT.request_grass_position_data(req_msg=req_msg)
+                    if len(reply):
+                        for key, data in reply.items():
+                            if data['REPLY'] == "EXIST":
+                                grass_tile : GrassTile = GrassTile(data['GRASS_POS'])
+                                for data in data['GRASS_DATA']:
+                                    if not data in grass_tile.grass:
+                                        data_list = data.split(' ; ')
+                                        grass_data = {"KEY" : data, "POS" : [int(data_list[0]), int(data_list[1])], "TYPE" : int(data_list[2])}
+                                        grass_tile.add_blade(grass_data=grass_data)
+                                self.grass[key] = grass_tile
 
             if self.force > 0:
                 self.force = max(0, self.force - (self.force * dt))
@@ -221,6 +223,7 @@ class Window(Engine):
             display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 0), unsetcolor=(0, 0, 0, 0))
 
             self.display.blit(self.font.render(f"{self.world_pos}", True, (0, 0, 0)), (0, 0))
+            self.display.blit(self.font.render(f"FPS: {1//dt}", True, (0, 0, 0)), (200, 0))
             for offset in [(0, -1), (0, 1), (1, 0), (-1, 0)]:
                 self.display_2.blit(display_sillhouette, offset)
             

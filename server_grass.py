@@ -168,6 +168,7 @@ class Window(Engine):
                             grass_tile.render(self.display, render_scroll=render_scroll)
                             
             self.display.blit(self.font.render(f"{self.world_pos}", True, (0, 0, 0)), (0, 0))
+            self.display.blit(self.font.render(f"FPS: {1//dt}", True, (0, 0, 0)), (200, 0))
 
             if self.force > 0:
                 self.force = max(0, self.force - (self.force * dt))

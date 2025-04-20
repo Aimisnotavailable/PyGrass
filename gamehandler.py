@@ -13,10 +13,8 @@ class GameClient(Client):
     def __init__(self, IP):
         super().__init__(IP)
 
-    def request_world_data(self, game):
-
-        self.request_player_position_data(game)
-        self.request_grass_position_data(game)
+    def __start_request__(self):
+        self.wait = True
 
     def __await_okay_response__(self):
         return self.receive_msg(self.client) == "OKAY"
@@ -31,8 +29,6 @@ class GameClient(Client):
 
         msg = "REQUEST_POSITION_DATA"
         self.send_msg(self.client, msg)
-        
-        self.__await_okay_response__()
 
         msg = f'{game.world_pos}'
         self.send_msg(self.client, msg)
@@ -45,7 +41,6 @@ class GameClient(Client):
 
         msg  = "REQUEST_GRASS_DATA"
         self.send_msg(self.client, msg)
-
         self.send_msg(self.client, json.dumps(req_msg))
         return self.__deserialize_data__(self.receive_msg(self.client))
 
@@ -111,8 +106,6 @@ class GameServer(Server):
 
                 if msg == "REQUEST_POSITION_DATA":
                     
-                    self.__send_okay_response__(conn)
-
                     msg = self.receive_msg(conn)
                     
                     self.game.players[client_id] = json.loads(msg)
