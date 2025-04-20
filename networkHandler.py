@@ -25,20 +25,13 @@ class NetworkHandler(ABC):
         send_length = str(msg_length).encode(self.FORMAT)
         send_length += b' ' * (self.HEADER - len(send_length))
         return send_length
-
-    def send_msg(self, conn : socket.socket , msg: str):
-
-        msg = msg.encode(self.FORMAT)
-        conn.send(self.__send_msg_size__(msg))
-        conn.send(msg)
     
-    def receive_msg(self, conn : socket.socket):
+    def __receive_msg_size__(self, conn : socket.socket):
         
         msg_length = conn.recv(self.HEADER).decode(self.FORMAT)
         if msg_length != "":
             msg_length = int(msg_length)
-            # print("MSG_LENGTH : ", msg_length)
-            return conn.recv(msg_length).decode(self.FORMAT)
+            return msg_length
         
 class Server(NetworkHandler):
 
