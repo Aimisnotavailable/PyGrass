@@ -107,7 +107,6 @@ class GameServer(Server):
                 if msg == "REQUEST_POSITION_DATA":
                     
                     msg = self.receive_msg(conn)
-                    
                     self.game.players[client_id] = json.loads(msg)
 
                     players = self.game.players.copy()
@@ -117,7 +116,8 @@ class GameServer(Server):
                 
                 if msg == "REQUEST_GRASS_DATA":
                     
-                    msg = json.loads(self.receive_msg(conn))
+                    msg = self.receive_msg(conn)
+                    msg = json.loads(msg)
                     grass_msg = {}
 
                     with lock:

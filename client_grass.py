@@ -131,8 +131,8 @@ class Window(Engine):
                         self.delete = False
 
             # WORLD GRID POSITIONS
-            self.world_boundary_x = [render_scroll[0] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[0] + self.display.get_width()) // GRASS_WIDTH + GRASS_WIDTH]
-            self.world_boundary_y = [render_scroll[1] // GRASS_WIDTH - GRASS_WIDTH, (render_scroll[1] + self.display.get_height()) // GRASS_WIDTH + GRASS_WIDTH]
+            self.world_boundary_x = [render_scroll[0] // GRASS_WIDTH - 2, (render_scroll[0] + self.display.get_width()) // GRASS_WIDTH + 2]
+            self.world_boundary_y = [render_scroll[1] // GRASS_WIDTH - 2, (render_scroll[1] + self.display.get_height()) // GRASS_WIDTH + 2]
             self.grass_update_msg = {'GRASS_ACTION' : "", "BOUNDARY_X" : self.world_boundary_x, "BOUNDARY_Y" : self.world_boundary_y}
             
             
@@ -157,6 +157,7 @@ class Window(Engine):
                     p_rects.append(p_rect)
                     p_ids.append(player_id)
 
+            # print(f'X : {self.world_boundary_x} Y: {self.world_boundary_y}')
             for x in range(self.world_boundary_x[0], self.world_boundary_x[1]):
                 for y in range(self.world_boundary_y[0], self.world_boundary_y[1]):
                     g_pos = f"{x} ; {y}"
@@ -195,6 +196,7 @@ class Window(Engine):
                 CLIENT.request_player_position_data(self)
                 CLIENT.request_wind_position_data(self)
                 if len(req_msg['KEY']):
+                    print(len(req_msg['KEY']))
                     reply = CLIENT.request_grass_position_data(req_msg=req_msg)
                     if len(reply):
                         for key, data in reply.items():
