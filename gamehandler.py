@@ -18,6 +18,9 @@ class GameClient(Client):
         self.request_player_position_data(game)
         self.request_grass_position_data(game)
 
+    def __await_okay_response__(self):
+        return self.receive_msg(self.client) == "OKAY"
+    
     def request_played_id(self):
         msg = "REQUEST_PLAYER_ID"
         self.send_msg(self.client, msg)
@@ -28,6 +31,8 @@ class GameClient(Client):
 
         msg = "REQUEST_POSITION_DATA"
         self.send_msg(self.client, msg)
+        
+        self.__await_okay_response__()
 
         msg = f'{game.world_pos}'
         self.send_msg(self.client, msg)
@@ -88,6 +93,9 @@ class GameServer(Server):
 
             print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 2}")
 
+    def __send_okay_response__(self, conn):
+        self.send_msg(conn, "OKAY")
+
     def handle_client(self, conn, addr, client_id=""):
         print(f"[NEW CONNECTION] {addr} connected.")
         connected = True
@@ -103,8 +111,10 @@ class GameServer(Server):
 
                 if msg == "REQUEST_POSITION_DATA":
                     
+                    self.__send_okay_response__(conn)
+
                     msg = self.receive_msg(conn)
-                    print("MESSAGE: ", msg)
+                    
                     self.game.players[client_id] = json.loads(msg)
 
                     players = self.game.players.copy()
