@@ -145,7 +145,8 @@ class Window(Engine):
             #                 self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(40, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20)) 
             
             print(CLIENT.request_played_id())
-            
+            CLIENT.request_player_position_data(self)
+
             self.wind.update(dt, render_scroll=render_scroll)
 
             
@@ -195,7 +196,7 @@ class Window(Engine):
                         req_msg['KEY'].append(g_pos)
 
             # if ((self.buffer + 0.1) % 50) == 0:
-            #     CLIENT.request_player_position_data(self)
+            #     
             #     CLIENT.request_wind_position_data(self)
             #     if len(req_msg['KEY']):
             #         print(len(req_msg['KEY']))

@@ -25,17 +25,17 @@ class GameClient(Client):
         
         return self.receive_msg(self.client)
 
-    # def request_player_position_data(self, game):
+    def request_player_position_data(self, game):
 
-    #     msg = "REQUEST_POSITION_DATA"
-    #     self.__send_msg_size__(self.client, msg)
+        msg = "REQUEST_POSITION_DATA"
+        self.__send_msg_size__(self.client, msg)
 
-    #     msg = f'{game.world_pos}'
-    #     self.send_msg(self.client, msg)
+        msg = f'{game.world_pos}'
+        self.send_msg(self.client, msg)
 
-    #     reply = self.__deserialize_data__(self.receive_msg(self.client))
+        reply = self.__deserialize_data__(self.receive_msg(self.client))
 
-    #     game.players = reply
+        game.players = reply
         
     # def request_grass_position_data(self, req_msg: str):
 
@@ -105,16 +105,16 @@ class GameServer(Server):
                     connected = False
                     break
 
-                # if msg == "REQUEST_POSITION_DATA":
+                if msg == "REQUEST_POSITION_DATA":
                     
-                #     msg_data = conn.recv(self.__receive_msg_size__(conn)).decode(self.FORMAT)
+                    msg_data = conn.recv(self.__receive_msg_size__(conn)).decode(self.FORMAT)
                     
-                #     self.game.players[client_id] = json.loads(msg_data)
+                    self.game.players[client_id] = json.loads(msg_data)
 
-                #     players = self.game.players.copy()
+                    players = self.game.players.copy()
 
-                #     reply = json.dumps(players)
-                #     self.send_msg(conn, reply)
+                    reply = json.dumps(players)
+                    self.send_msg(conn, reply)
                 
                 # if msg == "REQUEST_GRASS_DATA":
                     
