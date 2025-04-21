@@ -21,7 +21,7 @@ class GameClient(Client):
     
     def request_played_id(self):
         msg = "REQUEST_PLAYER_ID"
-        self.send_msg(self.client, msg)
+        self.send_msg(self.client, msg=msg)
         
         return self.receive_msg(self.client)
 
@@ -100,20 +100,21 @@ class GameServer(Server):
             msg = conn.recv(self.HEADER).decode(self.FORMAT)
             
             if msg:
+
                 if msg == self.DISCONNECT_MESSAGE:
                     connected = False
                     break
 
-                if msg == "REQUEST_POSITION_DATA":
+                # if msg == "REQUEST_POSITION_DATA":
                     
-                    msg_data = conn.recv(self.__receive_msg_size__(conn)).decode(self.FORMAT)
+                #     msg_data = conn.recv(self.__receive_msg_size__(conn)).decode(self.FORMAT)
                     
-                    self.game.players[client_id] = json.loads(msg_data)
+                #     self.game.players[client_id] = json.loads(msg_data)
 
-                    players = self.game.players.copy()
+                #     players = self.game.players.copy()
 
-                    reply = json.dumps(players)
-                    self.send_msg(conn, reply)
+                #     reply = json.dumps(players)
+                #     self.send_msg(conn, reply)
                 
                 # if msg == "REQUEST_GRASS_DATA":
                     
@@ -145,9 +146,8 @@ class GameServer(Server):
                 #     reply = json.dumps({"WIND_POS" : self.game.wind.x_pos, "WIND_DIRECTION" : self.game.wind.dir, "WIND_SPEED" : self.game.wind.speed})
                 #     self.send_msg(conn, reply)
                 
-                # if msg == "REQUEST_PLAYER_ID":
-
-                #     self.send_msg(conn, client_id)
+                if msg == "REQUEST_PLAYER_ID":
+                    self.send_msg(conn, client_id)
 
         conn.close()
 
