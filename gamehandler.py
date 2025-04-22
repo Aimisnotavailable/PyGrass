@@ -1,8 +1,10 @@
 import threading
 import json
 import random
+import socket
+from time import sleep
 from grass import Grass, GrassTile, GRASS_WIDTH
-from networkHandler import Client, Server
+from networkHandler import Client, Server, Stopper
 # from main import Window
 
 lock = threading.Lock()
@@ -20,21 +22,27 @@ class GameClient(Client):
         return self.receive_msg(self.client) == "OKAY"
     
     def request_played_id(self):
-        msg = "REQUEST_PLAYER_ID"
-        self.send_msg(self.client, msg=msg)
         
-        return self.receive_msg(self.client)
+        stopper = Stopper()
+
+        msg = "REQUEST_PLAYER_ID"
+        self.send_msg(self.socket, msg=msg)
+        msg = self.receive_msg(self.socket)
+        
+        return msg
 
     def request_player_position_data(self, game):
         
         msg = "REQUEST_POSITION_DATA"
-        self.send_msg(self.client, msg)
+        self.send_msg(self.socket, msg)
+
+        # reply = self.receive_msg(self.socket)
 
         msg = f'{game.world_pos}'
-        self.send_msg(self.client, msg)
+        self.send_msg(self.socket, msg)
 
         reply = self.__deserialize_data__(self.receive_msg(self.client))
-        print("REPLY : ", reply)
+
         game.players = reply
         
     # def request_grass_position_data(self, req_msg: str):
@@ -70,23 +78,31 @@ class GameServer(Server):
         self.game = game
     
     def start(self):
-        self.server.listen()
+        self.socket.listen()
         
         print(f"[LISTENING] Server is listening on {self.IP}")
 
         client_count = -1
         while True:
-            conn, addr = self.server.accept()
+            try:
+                conn, addr = self.socket.accept()
             
-            client_count += 1
+                client_count += 1
 
-            client_id = self.__generate_id__(client_count)
-            self.game.players[client_id] = ""
+                client_id = self.__generate_id__(client_count)
+                self.game.players[client_id] = ""
 
-            thread = threading.Thread(target=self.handle_client, args=(conn, addr, client_id))
-            thread.start()
+                thread = threading.Thread(target=self.handle_client, args=(conn, addr, client_id))
+                thread.start()
 
-            print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 2}")
+                print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 2}")
+            except socket.timeout as e:
+                err = e.args[0]
+
+                if err == 'timed out':
+                    sleep(1)
+                    print("TIMED OUT")
+                    continue
 
     def __send_okay_response__(self, conn):
         self.send_msg(conn, "OKAY")
@@ -100,13 +116,13 @@ class GameServer(Server):
             msg = conn.recv(self.HEADER).decode(self.FORMAT)
             
             if msg:
-
+                stopper = Stopper()
                 if msg == self.DISCONNECT_MESSAGE:
                     connected = False
                     break
 
                 if msg == "REQUEST_POSITION_DATA":
-                    
+                    # self.send_msg(self.socket, "HEHE", None)
                     msg_data = conn.recv(self.__receive_msg_size__(conn)).decode(self.FORMAT)
                     
                     self.game.players[client_id] = json.loads(msg_data)
@@ -114,6 +130,7 @@ class GameServer(Server):
                     players = self.game.players.copy()
 
                     reply = json.dumps(players)
+
                     self.send_msg(conn, reply)
                 
                 # if msg == "REQUEST_GRASS_DATA":
