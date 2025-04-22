@@ -23,7 +23,7 @@ OFFSETS = [(0, 1),
            (1, -1),
            (-1,-1),]
 
-CLIENT = GameClient("192.168.0.176")
+CLIENT = GameClient("192.168.100.160")
 
 class Window(Engine): 
 

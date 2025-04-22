@@ -23,27 +23,24 @@ class GameClient(Client):
     
     def request_played_id(self):
         
-        stopper = Stopper()
-
         msg = "REQUEST_PLAYER_ID"
-        self.send_msg(self.socket, msg=msg)
+        self.direct_send(self.socket, msg=msg)
         msg = self.receive_msg(self.socket)
         
         return msg
 
     def request_player_position_data(self, game):
-        
-        msg = "REQUEST_POSITION_DATA"
-        self.send_msg(self.socket, msg)
-
-        # reply = self.receive_msg(self.socket)
-
+        msg = "REQUEST_POSITION_DATA" 
+        self.__await_reply__(self.socket, msg, self.HEADER)
+        print("HEHE1")
         msg = f'{game.world_pos}'
-        self.send_msg(self.socket, msg)
-
-        reply = self.__deserialize_data__(self.receive_msg(self.client))
-
+        reply = self.__await_reply__(self.socket, msg, self.HEADER, is_direct_send=False, is_direct_receive=False, debug=True)
+        print("HEHE2")
         game.players = reply
+
+        self.direct_send(self.socket, "DONE")
+
+        
         
     # def request_grass_position_data(self, req_msg: str):
 
@@ -100,7 +97,6 @@ class GameServer(Server):
                 err = e.args[0]
 
                 if err == 'timed out':
-                    sleep(1)
                     print("TIMED OUT")
                     continue
 
@@ -112,26 +108,29 @@ class GameServer(Server):
         connected = True
 
         while connected:
-
-            msg = conn.recv(self.HEADER).decode(self.FORMAT)
             
+            msg = self.direct_receive(conn)
+
             if msg:
                 stopper = Stopper()
+
                 if msg == self.DISCONNECT_MESSAGE:
                     connected = False
                     break
 
                 if msg == "REQUEST_POSITION_DATA":
+                    msg = self.__await_reply__(conn, "RECEIVED", self.HEADER, is_direct_receive=False)
+
                     # self.send_msg(self.socket, "HEHE", None)
-                    msg_data = conn.recv(self.__receive_msg_size__(conn)).decode(self.FORMAT)
                     
-                    self.game.players[client_id] = json.loads(msg_data)
+                    self.game.players[client_id] = json.loads(msg)
 
                     players = self.game.players.copy()
 
                     reply = json.dumps(players)
 
-                    self.send_msg(conn, reply)
+                    self.__await_reply__(conn, reply, self.HEADER, is_direct_send=False, debug=True)
+                    print("GAGO")
                 
                 # if msg == "REQUEST_GRASS_DATA":
                     
