@@ -232,7 +232,7 @@ class Window(Engine):
             for offset in [(0, -1), (0, 1), (1, 0), (-1, 0)]:
                 self.display_2.blit(display_sillhouette, offset)
             
-            self.display_2.blit(self.display)
+            self.display_2.blit(self.display, (0, 0))
             self.screen.blit(pygame.transform.scale(self.display_2, self.screen.get_size()), (0, 0))
 
             pygame.display.update()

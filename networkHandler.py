@@ -39,10 +39,17 @@ class NetworkHandler(ABC):
         conn.send(self.__send_msg_size__(msg))
         conn.send(msg.encode(self.FORMAT))
     
+    def direct_send(self, conn : socket.socket, msg : str):
+        conn.send(msg.encode(self.FORMAT))
+    
+    def direct_receive(self, conn : socket.socket, msg : str):
+        return conn.recv(self.HEADER).decode(self.FORMAT)
+    
     def receive_msg(self, conn : socket.socket):
 
         msg_length = self.__receive_msg_size__(conn)
         return conn.recv(msg_length).decode(self.FORMAT)
+    
 
 class Server(NetworkHandler):
 

@@ -3,7 +3,7 @@ import random
 import math
 from scripts.assets import Assets
 
-GRASS_WIDTH = 20
+GRASS_WIDTH = 200
 LIGHT_LEVELS = 8
 MAX_ROT = 70
 PADDING = 20

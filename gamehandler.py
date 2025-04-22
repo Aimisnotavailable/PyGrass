@@ -26,15 +26,15 @@ class GameClient(Client):
         return self.receive_msg(self.client)
 
     def request_player_position_data(self, game):
-
+        
         msg = "REQUEST_POSITION_DATA"
-        self.__send_msg_size__(self.client, msg)
+        self.send_msg(self.client, msg)
 
         msg = f'{game.world_pos}'
         self.send_msg(self.client, msg)
 
         reply = self.__deserialize_data__(self.receive_msg(self.client))
-
+        print("REPLY : ", reply)
         game.players = reply
         
     # def request_grass_position_data(self, req_msg: str):
