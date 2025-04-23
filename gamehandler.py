@@ -24,40 +24,41 @@ class GameClient(Client):
     def request_played_id(self):
         
         msg = "REQUEST_PLAYER_ID"
-        self.direct_send(self.socket, msg=msg)
-        msg = self.receive_msg(self.socket)
+        msg = self.__await_reply__(self.socket, msg)
         
         return msg
 
     def request_player_position_data(self, game):
         msg = "REQUEST_POSITION_DATA" 
-        self.__await_reply__(self.socket, msg, self.HEADER)
-        print("HEHE1")
+        self.__await_reply__(self.socket, msg)
+
         msg = f'{game.world_pos}'
-        reply = self.__await_reply__(self.socket, msg, self.HEADER, is_direct_send=False, is_direct_receive=False, debug=True)
-        print("HEHE2")
-        game.players = reply
+        reply = self.__await_reply__(self.socket, msg, debug=True)
 
-        self.direct_send(self.socket, "DONE")
+        game.players = self.__deserialize_data__(reply)
+
+        self.send_msg(self.socket, "DONE")
 
         
         
-    # def request_grass_position_data(self, req_msg: str):
+    def request_grass_position_data(self, req_msg: str):
 
-    #     msg  = "REQUEST_GRASS_DATA"
-    #     self.send_msg(self.client, msg)
-    #     self.send_msg(self.client, json.dumps(req_msg))
-    #     return self.__deserialize_data__(self.receive_msg(self.client))
+        msg  = "REQUEST_GRASS_DATA"
+        self.__await_reply__(self.socket, msg)
+        reply = self.__await_reply__(self.socket, json.dumps(req_msg))
 
-    # def request_wind_position_data(self, game):
+        self.send_msg(self.socket, "DONE")
+        return self.__deserialize_data__(reply)
 
-    #     msg = "REQUEST_WIND_DATA"
-    #     self.send_msg(self.client, msg)
-    #     reply = self.__deserialize_data__(self.receive_msg(self.client))
+    def request_wind_position_data(self, game):
 
-    #     game.wind.x_pos = reply['WIND_POS']
-    #     game.wind.dir = reply['WIND_DIRECTION']
-    #     game.wind.speed = reply['WIND_SPEED']
+        msg = "REQUEST_WIND_DATA"
+        reply = self.__await_reply__(self.socket, msg)
+        reply = self.__deserialize_data__(reply)
+
+        game.wind.x_pos = reply['WIND_POS']
+        game.wind.dir = reply['WIND_DIRECTION']
+        game.wind.speed = reply['WIND_SPEED']
 
     def __deserialize_data__(self, reply):
         try:
@@ -109,7 +110,7 @@ class GameServer(Server):
 
         while connected:
             
-            msg = self.direct_receive(conn)
+            msg = self.receive_msg(conn)
 
             if msg:
                 stopper = Stopper()
@@ -119,7 +120,7 @@ class GameServer(Server):
                     break
 
                 if msg == "REQUEST_POSITION_DATA":
-                    msg = self.__await_reply__(conn, "RECEIVED", self.HEADER, is_direct_receive=False)
+                    msg = self.__await_reply__(conn, "RECEIVED")
 
                     # self.send_msg(self.socket, "HEHE", None)
                     
@@ -129,38 +130,36 @@ class GameServer(Server):
 
                     reply = json.dumps(players)
 
-                    self.__await_reply__(conn, reply, self.HEADER, is_direct_send=False, debug=True)
-                    print("GAGO")
+                    self.__await_reply__(conn, reply, debug=True)
                 
-                # if msg == "REQUEST_GRASS_DATA":
-                    
-                #     msg = self.receive_msg(conn)
+                if msg == "REQUEST_GRASS_DATA":
+                    msg = self.__await_reply__(conn, "RECEIVED")
 
-                #     msg = json.loads(msg)
-                #     grass_msg = {}
+                    msg = json.loads(msg)
+                    grass_msg = {}
 
-                #     with lock:
-                #         if msg['GRASS_ACTION'] == 'ADD':
-                #             if msg['GRASS_POS'] not in game_grass:
-                #                 game_grass[msg['GRASS_POS']] = Grass(msg['GRASS_POS_INT'])
-                #         else:
-                #             for key in msg['KEY']:
-                #                 if key in game_grass:
-                #                     grass_msg[key] = {"REPLY" : "EXIST", "GRASS_POS" : game_grass[key].pos, "GRASS_DATA" : list(game_grass[key].grass)}
-                #         # else:
-                #         #     for x in range(msg['BOUNDARY_X'][0], msg['BOUNDARY_X'][1]):
-                #         #         for y in range(msg['BOUNDARY_Y'][0], msg['BOUNDARY_Y'][1]):
-                #         #             key = f"{x} ; {y}"
-                #         #             if key in game_grass:
-                #         #                 grass_msg[key] = {"GRASS_POS" : game_grass[key].pos, "GRASS_TYPE" : game_grass[key].type}
+                    with lock:
+                        if msg['GRASS_ACTION'] == 'ADD':
+                            if msg['GRASS_POS'] not in game_grass:
+                                game_grass[msg['GRASS_POS']] = Grass(msg['GRASS_POS_INT'])
+                        else:
+                            for key in msg['KEY']:
+                                if key in game_grass:
+                                    grass_msg[key] = {"REPLY" : "EXIST", "GRASS_POS" : game_grass[key].pos, "GRASS_DATA" : list(game_grass[key].grass)}
+                        # else:
+                        #     for x in range(msg['BOUNDARY_X'][0], msg['BOUNDARY_X'][1]):
+                        #         for y in range(msg['BOUNDARY_Y'][0], msg['BOUNDARY_Y'][1]):
+                        #             key = f"{x} ; {y}"
+                        #             if key in game_grass:
+                        #                 grass_msg[key] = {"GRASS_POS" : game_grass[key].pos, "GRASS_TYPE" : game_grass[key].type}
 
-                #     reply = json.dumps(grass_msg)
-                #     self.send_msg(conn, reply)
+                    reply = json.dumps(grass_msg)
+                    self.__await_reply__(conn, reply)
 
-                # if msg == "REQUEST_WIND_DATA":
+                if msg == "REQUEST_WIND_DATA":
 
-                #     reply = json.dumps({"WIND_POS" : self.game.wind.x_pos, "WIND_DIRECTION" : self.game.wind.dir, "WIND_SPEED" : self.game.wind.speed})
-                #     self.send_msg(conn, reply)
+                    reply = json.dumps({"WIND_POS" : self.game.wind.x_pos, "WIND_DIRECTION" : self.game.wind.dir, "WIND_SPEED" : self.game.wind.speed})
+                    self.send_msg(conn, reply)
                 
                 if msg == "REQUEST_PLAYER_ID":
                     self.send_msg(conn, client_id)

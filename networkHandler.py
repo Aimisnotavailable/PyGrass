@@ -44,12 +44,6 @@ class NetworkHandler(ABC):
     def send_msg(self, conn : socket.socket, msg : str ):
         conn.send(self.__send_msg_size__(msg))
         conn.send(msg.encode(self.FORMAT))
-
-    def direct_send(self, conn : socket.socket, msg : str):
-        conn.send(msg.encode(self.FORMAT))
-    
-    def direct_receive(self, conn : socket.socket):
-        return conn.recv(self.HEADER).decode(self.FORMAT)
             
     def __await__(self, conn : socket.socket, header_size):
 
@@ -65,24 +59,17 @@ class NetworkHandler(ABC):
                     print("TIMED OUT")
                     continue
     
-    def __await_reply__(self, conn : socket.socket, msg : str, header_size, is_direct_receive : bool = True, is_direct_send : bool = True, debug : bool = False):
+    def __await_reply__(self, conn : socket.socket, msg : str, debug : bool = False):
 
         while True:
             try:
-                if is_direct_send:
-                    self.direct_send(conn, msg)
-                else:
-                    self.send_msg(conn, msg)
+
+                self.send_msg(conn, msg)
 
                 if debug:
                     print(msg)
 
-                if is_direct_receive:
-                    print("GAGO1")
-                    reply = self.direct_receive(conn)
-                else:
-                    print("GAGO2")
-                    reply = self.receive_msg(conn)
+                reply = self.receive_msg(conn)
 
                 if reply:
                     return reply
@@ -96,7 +83,7 @@ class NetworkHandler(ABC):
     
     def receive_msg(self, conn : socket.socket):
         msg_length = self.__receive_msg_size__(conn)
-        return self.__await__(self.socket, msg_length)
+        return self.__await__(conn, msg_length)
         
 class Stopper:
 

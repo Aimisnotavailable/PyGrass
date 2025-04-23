@@ -23,7 +23,7 @@ OFFSETS = [(0, 1),
            (1, -1),
            (-1,-1),]
 
-CLIENT = GameClient("192.168.100.160")
+CLIENT = GameClient("192.168.0.176")
 
 class Window(Engine): 
 
@@ -167,10 +167,7 @@ class Window(Engine):
                     
                     if g_pos in self.grass:
                         grass_tile : GrassTile = self.grass[g_pos]
-
-                        if grass_tile.current_count < 20:
-                           req_msg['KEY'].append(g_pos)
-
+                        
                         wind_force = 0
 
                         if self.wind.dir == "left":
@@ -195,22 +192,21 @@ class Window(Engine):
                     else:
                         req_msg['KEY'].append(g_pos)
 
-            # if ((self.buffer + 0.1) % 50) == 0:
-            #     
-            #     CLIENT.request_wind_position_data(self)
-            #     if len(req_msg['KEY']):
-            #         print(len(req_msg['KEY']))
-            #         reply = CLIENT.request_grass_position_data(req_msg=req_msg)
-            #         if len(reply):
-            #             for key, data in reply.items():
-            #                 if data['REPLY'] == "EXIST":
-            #                     grass_tile : GrassTile = GrassTile(data['GRASS_POS'])
-            #                     for data in data['GRASS_DATA']:
-            #                         if not data in grass_tile.grass:
-            #                             data_list = data.split(' ; ')
-            #                             grass_data = {"KEY" : data, "POS" : [int(data_list[0]), int(data_list[1])], "TYPE" : int(data_list[2])}
-            #                             grass_tile.add_blade(grass_data=grass_data)
-            #                     self.grass[key] = grass_tile
+            if ((self.buffer + 0.1) % 50) == 0:
+                CLIENT.request_wind_position_data(self)
+                if len(req_msg['KEY']):
+                    print(len(req_msg['KEY']))
+                    reply = CLIENT.request_grass_position_data(req_msg=req_msg)
+                    if len(reply):
+                        for key, data in reply.items():
+                            if data['REPLY'] == "EXIST":
+                                grass_tile : GrassTile = GrassTile(data['GRASS_POS'])
+                                for data in data['GRASS_DATA']:
+                                    if not data in grass_tile.grass:
+                                        data_list = data.split(' ; ')
+                                        grass_data = {"KEY" : data, "POS" : [int(data_list[0]), int(data_list[1])], "TYPE" : int(data_list[2])}
+                                        grass_tile.add_blade(grass_data=grass_data)
+                                self.grass[key] = grass_tile
 
             if self.force > 0:
                 self.force = max(0, self.force - (self.force * dt))

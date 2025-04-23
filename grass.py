@@ -3,7 +3,7 @@ import random
 import math
 from scripts.assets import Assets
 
-GRASS_WIDTH = 200
+GRASS_WIDTH = 20
 LIGHT_LEVELS = 8
 MAX_ROT = 70
 PADDING = 20
@@ -14,7 +14,7 @@ DIR = {'left' : -1, 'right' : 1}
 
 class GrassTile:
 
-    def __init__(self, pos):
+    def __init__(self, pos, grass_count=20):
         self.pos = pos
 
         self.grass : dict[str, Grass] = {}
@@ -25,6 +25,9 @@ class GrassTile:
         self.current_count = 0
         self.available_x_pos = [i for i in range(GRASS_WIDTH)]
         self.available_y_pos = [i for i in range(GRASS_WIDTH)]
+
+        for i in range(grass_count):
+            self.add_blade()
         
     def add_blade(self, grass_data={}):
         if not len(grass_data):

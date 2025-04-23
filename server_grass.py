@@ -41,7 +41,7 @@ class Window(Engine):
         self.players = {"SERVER" : self.world_pos}
         self.id = ""
 
-        SERVER = GameServer("192.168.100.160", game=self)
+        SERVER = GameServer("192.168.0.176", game=self)
 
         thread = threading.Thread(target=SERVER.start)
         thread.start()
@@ -122,9 +122,6 @@ class Window(Engine):
                             g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
                             if g_pos not in game_grass:
                                 game_grass[g_pos] = GrassTile(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH))
-                            else:
-                                if game_grass[g_pos].current_count < 20:
-                                    game_grass[g_pos].add_blade()
 
             self.wind.update(dt, render_scroll)
             # self.wind.render(self.display, render_scroll)
