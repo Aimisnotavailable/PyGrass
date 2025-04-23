@@ -134,7 +134,7 @@ class GameServer(Server):
                 
                 if msg == "REQUEST_GRASS_DATA":
                     msg = self.__await_reply__(conn, "RECEIVED")
-
+                    print(msg)
                     msg = json.loads(msg)
                     grass_msg = {}
 

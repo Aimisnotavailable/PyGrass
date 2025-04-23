@@ -99,7 +99,7 @@ class Server(NetworkHandler):
     def __start_server__(self, timeout):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind(self.ADDR)
-        self.socket.settimeout(timeout)
+        # self.socket.settimeout(timeout)
 
     def __generate_id__(self, client_count):
         return "PLAYER " + str(client_count)
@@ -126,7 +126,7 @@ class Client(NetworkHandler):
     def __connect__(self, timeout):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect(self.ADDR)
-        self.socket.settimeout(timeout)
+        # self.socket.settimeout(timeout)
 
 
     
