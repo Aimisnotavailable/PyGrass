@@ -45,6 +45,7 @@ class GameClient(Client):
 
         msg  = "REQUEST_GRASS_DATA"
         self.__await_reply__(self.socket, msg)
+        print(len(json.dumps(req_msg)))
         reply = self.__await_reply__(self.socket, json.dumps(req_msg))
 
         self.send_msg(self.socket, "DONE")
