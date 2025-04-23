@@ -89,7 +89,7 @@ class Window(Engine):
             self.display.fill((0, 0, 0, 0))
             self.display_2.fill((1, 50, 32))
 
-            dt = (self.clock.tick() / 1000.0) + 1e-5
+            dt = (self.clock.tick(60) / 1000.0) + 1e-5
 
             mpos = pygame.mouse.get_pos()
             mpos = [mpos[0] // 2, mpos[1] // 2]
@@ -167,7 +167,7 @@ class Window(Engine):
                     
                     if g_pos in self.grass:
                         grass_tile : GrassTile = self.grass[g_pos]
-                        
+
                         wind_force = 0
 
                         if self.wind.dir == "left":

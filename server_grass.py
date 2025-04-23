@@ -188,6 +188,7 @@ class Window(Engine):
             self.screen.blit(pygame.transform.scale(self.display_2, self.screen.get_size()), (0, 0))
 
             pygame.display.update()
+            
             # self.clock.tick(60)
 
 Window().run()
