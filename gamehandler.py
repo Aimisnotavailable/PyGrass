@@ -9,6 +9,8 @@ from networkHandler import Client, Server, Stopper
 
 lock = threading.Lock()
 game_grass : dict[str, GrassTile] = {}
+grass_to_render : dict[str, GrassTile] = {}
+req_msg : dict[str, dict] = {}
 
 class GameClient(Client):
 
@@ -21,6 +23,13 @@ class GameClient(Client):
     def __await_okay_response__(self):
         return self.receive_msg(self.client) == "OKAY"
     
+    def request_world_data(self, game):
+
+        while True:
+            self.request_player_position_data(game)
+            self.request_grass_position_data(game)
+            self.request_wind_position_data(game)
+        
     def request_played_id(self):
         
         msg = "REQUEST_PLAYER_ID"
@@ -39,17 +48,18 @@ class GameClient(Client):
 
         self.send_msg(self.socket, "DONE")
 
-        
-        
-    def request_grass_position_data(self, req_msg: str):
+    def request_grass_position_data(self, game):
+        global req_msg
+        global grass_to_render
 
         msg  = "REQUEST_GRASS_DATA"
-        self.__await_reply__(self.socket, msg)
-        print(len(json.dumps(req_msg)))
-        reply = self.__await_reply__(self.socket, json.dumps(req_msg))
+        rp = self.__await_reply__(self.socket, msg)
 
+        reply = self.__await_reply__(self.socket, json.dumps(req_msg))
         self.send_msg(self.socket, "DONE")
-        return self.__deserialize_data__(reply)
+        
+        grass_to_render.update(self.__deserialize_data__(reply))
+
 
     def request_wind_position_data(self, game):
 
@@ -135,24 +145,24 @@ class GameServer(Server):
                 
                 if msg == "REQUEST_GRASS_DATA":
                     msg = self.__await_reply__(conn, "RECEIVED")
-                    print(msg)
+                    
                     msg = json.loads(msg)
                     grass_msg = {}
-
-                    with lock:
-                        if msg['GRASS_ACTION'] == 'ADD':
-                            if msg['GRASS_POS'] not in game_grass:
-                                game_grass[msg['GRASS_POS']] = Grass(msg['GRASS_POS_INT'])
-                        else:
-                            for key in msg['KEY']:
-                                if key in game_grass:
-                                    grass_msg[key] = {"REPLY" : "EXIST", "GRASS_POS" : game_grass[key].pos, "GRASS_DATA" : list(game_grass[key].grass)}
-                        # else:
-                        #     for x in range(msg['BOUNDARY_X'][0], msg['BOUNDARY_X'][1]):
-                        #         for y in range(msg['BOUNDARY_Y'][0], msg['BOUNDARY_Y'][1]):
-                        #             key = f"{x} ; {y}"
-                        #             if key in game_grass:
-                        #                 grass_msg[key] = {"GRASS_POS" : game_grass[key].pos, "GRASS_TYPE" : game_grass[key].type}
+                    if msg:
+                        with lock:
+                            if msg['GRASS_ACTION'] == 'ADD':
+                                if msg['GRASS_POS'] not in game_grass:
+                                    game_grass[msg['GRASS_POS']] = Grass(msg['GRASS_POS_INT'])
+                            else:
+                                for key in msg['KEY']:
+                                    if key in game_grass:
+                                        grass_msg[key] = {"REPLY" : "EXIST", "GRASS_POS" : game_grass[key].pos, "GRASS_DATA" : list(game_grass[key].grass)}
+                            # else:
+                            #     for x in range(msg['BOUNDARY_X'][0], msg['BOUNDARY_X'][1]):
+                            #         for y in range(msg['BOUNDARY_Y'][0], msg['BOUNDARY_Y'][1]):
+                            #             key = f"{x} ; {y}"
+                            #             if key in game_grass:
+                            #                 grass_msg[key] = {"GRASS_POS" : game_grass[key].pos, "GRASS_TYPE" : game_grass[key].type}
 
                     reply = json.dumps(grass_msg)
                     self.__await_reply__(conn, reply)
