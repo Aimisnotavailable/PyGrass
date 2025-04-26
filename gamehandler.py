@@ -42,7 +42,7 @@ class GameClient(Client):
         self.__await_reply__(self.socket, msg)
 
         msg = f'{game.world_pos}'
-        reply = self.__await_reply__(self.socket, msg, debug=True)
+        reply = self.__await_reply__(self.socket, msg)
 
         game.players = self.__deserialize_data__(reply)
 
@@ -51,14 +51,14 @@ class GameClient(Client):
     def request_grass_position_data(self, game):
         global req_msg
         global grass_to_render
+        with lock:
+            msg  = "REQUEST_GRASS_DATA"
+            rp = self.__await_reply__(self.socket, msg)
 
-        msg  = "REQUEST_GRASS_DATA"
-        rp = self.__await_reply__(self.socket, msg)
-
-        reply = self.__await_reply__(self.socket, json.dumps(req_msg))
-        self.send_msg(self.socket, "DONE")
-        
-        grass_to_render.update(self.__deserialize_data__(reply))
+            reply = self.__await_reply__(self.socket, json.dumps(req_msg))
+            self.send_msg(self.socket, "DONE")
+            
+            grass_to_render.update(self.__deserialize_data__(reply))
 
 
     def request_wind_position_data(self, game):

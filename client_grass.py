@@ -210,7 +210,7 @@ class Window(Engine):
                         if len(reply):
                             for key, data in reply.items():
                                 if data['REPLY'] == "EXIST":
-                                    if not data['GRASS_POS']  in self.grass:
+                                    if not key in self.grass:
                                         grass_tile : GrassTile = GrassTile(data['GRASS_POS'])
                                         for data in data['GRASS_DATA']:
                                             if not data in grass_tile.grass:
@@ -220,8 +220,8 @@ class Window(Engine):
                                         self.grass[key] = grass_tile
                     # req_msg.clear()
                     # grass_to_render.clear()
-
-            if self.force > 0:
+            print(self.grass)
+            if self.force > 0: 
                 self.force = max(0, self.force - (self.force * dt))
             elif self.force < 0:
                 self.force = min(0, self.force - (self.force * dt))
