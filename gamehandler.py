@@ -5,6 +5,7 @@ import socket
 from time import sleep
 from grass import Grass, GrassTile, GRASS_WIDTH
 from networkHandler import Client, Server, Stopper
+from scripts.logger import get_logger_info
 # from main import Window
 
 lock = threading.Lock()
@@ -29,20 +30,22 @@ class GameClient(Client):
             self.request_player_position_data(game)
             self.request_grass_position_data(game)
             self.request_wind_position_data(game)
+            get_logger_info('APP', "REQUEST SUCCESS", True)
+
         
     def request_played_id(self):
         
         msg = "REQUEST_PLAYER_ID"
-        msg = self.__await_reply__(self.socket, msg)
+        msg = self.__await_reply__(self.socket, msg, s_type='APP')
         
         return msg
 
     def request_player_position_data(self, game):
         msg = "REQUEST_POSITION_DATA" 
-        self.__await_reply__(self.socket, msg)
+        self.__await_reply__(self.socket, msg, s_type='APP')
 
         msg = f'{game.world_pos}'
-        reply = self.__await_reply__(self.socket, msg)
+        reply = self.__await_reply__(self.socket, msg, s_type='APP')
 
         game.players = self.__deserialize_data__(reply)
 
@@ -51,11 +54,12 @@ class GameClient(Client):
     def request_grass_position_data(self, game):
         global req_msg
         global grass_to_render
+
         with lock:
             msg  = "REQUEST_GRASS_DATA"
-            rp = self.__await_reply__(self.socket, msg)
+            rp = self.__await_reply__(self.socket, msg, s_type='APP')
 
-            reply = self.__await_reply__(self.socket, json.dumps(req_msg))
+            reply = self.__await_reply__(self.socket, json.dumps(req_msg), s_type='APP')
             self.send_msg(self.socket, "DONE")
             
             grass_to_render.update(self.__deserialize_data__(reply))
@@ -64,7 +68,7 @@ class GameClient(Client):
     def request_wind_position_data(self, game):
 
         msg = "REQUEST_WIND_DATA"
-        reply = self.__await_reply__(self.socket, msg)
+        reply = self.__await_reply__(self.socket, msg, s_type='APP')
         reply = self.__deserialize_data__(reply)
 
         game.wind.x_pos = reply['WIND_POS']
@@ -124,7 +128,7 @@ class GameServer(Server):
             msg = self.receive_msg(conn)
 
             if msg:
-                stopper = Stopper()
+                # stopper = Stopper()
 
                 if msg == self.DISCONNECT_MESSAGE:
                     connected = False

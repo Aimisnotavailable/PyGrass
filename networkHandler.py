@@ -4,6 +4,7 @@ import random
 import json
 from time import sleep
 from abc import ABC, abstractmethod
+from scripts.logger import get_logger_info
 
 
 class NetworkHandler(ABC):
@@ -37,6 +38,7 @@ class NetworkHandler(ABC):
                 msg_length = int(msg_length)
                 break
             except:
+                get_logger_info('CORE', str(self), True)
                 continue
 
         return msg_length
@@ -56,10 +58,10 @@ class NetworkHandler(ABC):
                 err = e.args[0]
 
                 if err == 'timed out':
-                    print("TIMED OUT")
+                    get_logger_info('CORE', str(self), True)
                     continue
     
-    def __await_reply__(self, conn : socket.socket, msg : str, debug : bool = False):
+    def __await_reply__(self, conn : socket.socket, msg : str, debug : bool = False, s_type = 'CORE'):
 
         while True:
             try:
@@ -78,7 +80,7 @@ class NetworkHandler(ABC):
                 err = e.args[0]
 
                 if err == 'timed out':
-                    print("TIMED OUT")
+                    get_logger_info(s_type, msg, True)
                     continue
     
     def receive_msg(self, conn : socket.socket):
@@ -99,7 +101,7 @@ class Server(NetworkHandler):
     def __start_server__(self, timeout):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind(self.ADDR)
-        # self.socket.settimeout(timeout)
+        self.socket.settimeout(timeout)
 
     def __generate_id__(self, client_count):
         return "PLAYER " + str(client_count)
@@ -126,7 +128,7 @@ class Client(NetworkHandler):
     def __connect__(self, timeout):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect(self.ADDR)
-        # self.socket.settimeout(timeout)
+        self.socket.settimeout(timeout)
 
 
     

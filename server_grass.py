@@ -41,7 +41,7 @@ class Window(Engine):
         self.players = {"SERVER" : self.world_pos}
         self.id = ""
 
-        SERVER = GameServer("192.168.0.176", game=self)
+        SERVER = GameServer("192.168.0.200", game=self)
 
         thread = threading.Thread(target=SERVER.start)
         thread.start()

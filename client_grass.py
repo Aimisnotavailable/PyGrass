@@ -23,7 +23,7 @@ OFFSETS = [(0, 1),
            (1, -1),
            (-1,-1),]
 
-CLIENT = GameClient("192.168.0.176")
+CLIENT = GameClient("192.168.0.200")
 lock = threading.Lock()
 
 class Window(Engine): 
@@ -167,6 +167,8 @@ class Window(Engine):
             global req_msg 
             with lock:
                 req_msg.update({"GRASS_ACTION" : "", "KEY" : []})
+
+                # print(req_msg)
             
             
             # print(f'X : {self.world_boundary_x} Y: {self.world_boundary_y}')
@@ -200,27 +202,27 @@ class Window(Engine):
                             grass_tile.render(self.display, render_scroll=render_scroll)
                         else:
                             req_msg['KEY'].append(g_pos)
-
-                if ((self.buffer + 0.1) % 50) == 0:
-                    if len(req_msg['KEY']):
-                        global grass_to_render
-                        reply = {}
-                        
+                
+            if ((self.buffer + 0.1) % 50) == 0:
+                if len(req_msg['KEY']):
+                    
+                    reply = {}
+                    global grass_to_render
+                    with lock:
                         reply.update(grass_to_render)
                         if len(reply):
                             for key, data in reply.items():
                                 if data['REPLY'] == "EXIST":
                                     if not key in self.grass:
-                                        grass_tile : GrassTile = GrassTile(data['GRASS_POS'])
+                                        grass_tile : GrassTile = GrassTile(data['GRASS_POS'], 0)
                                         for data in data['GRASS_DATA']:
                                             if not data in grass_tile.grass:
                                                 data_list = data.split(' ; ')
                                                 grass_data = {"KEY" : data, "POS" : [int(data_list[0]), int(data_list[1])], "TYPE" : int(data_list[2])}
                                                 grass_tile.add_blade(grass_data=grass_data)
                                         self.grass[key] = grass_tile
-                    # req_msg.clear()
-                    # grass_to_render.clear()
-            print(self.grass)
+                # req_msg.clear()
+                # grass_to_render.clear()
             if self.force > 0: 
                 self.force = max(0, self.force - (self.force * dt))
             elif self.force < 0:
