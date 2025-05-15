@@ -23,7 +23,7 @@ OFFSETS = [(0, 1),
            (1, -1),
            (-1,-1),]
 
-CLIENT = GameClient("192.168.0.200")
+CLIENT = GameClient("192.168.0.191")
 lock = threading.Lock()
 
 class Window(Engine): 
@@ -138,18 +138,6 @@ class Window(Engine):
             # WORLD GRID POSITIONS
             self.world_boundary_x = [render_scroll[0] // GRASS_WIDTH - 2, (render_scroll[0] + self.display.get_width()) // GRASS_WIDTH + 2]
             self.world_boundary_y = [render_scroll[1] // GRASS_WIDTH - 2, (render_scroll[1] + self.display.get_height()) // GRASS_WIDTH + 2]
-            # with lock:
-            #     grass_to_render  = {'GRASS_ACTION' : "", "BOUNDARY_X" : self.world_boundary_x, "BOUNDARY_Y" : self.world_boundary_y}
-            
-            
-            # if self.insert:
-            #     for x in range(0, int(RADIUS * 2)):
-            #         for y in range(0, int(RADIUS * 2)):
-            #             pos = (m_rect[0] + x, m_rect[1] + y)
-            #             g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
-            #             if g_pos not in self.grass:
-            #                 self.grass[g_pos] = Grass(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH), (0, random.randint(40, 255), 0), True if random.randint(0, 100) < 12 else False, random.randint(10, 20)) 
-
 
             self.wind.update(dt, render_scroll=render_scroll)
 
@@ -158,12 +146,14 @@ class Window(Engine):
             p_ids = []
 
             for player_id, player in self.players.items():
+                # print(self.players.items)
                 if player:
+                    # print("PLAYER DATA : ", player)
                     p_rect = self.mouse_surf.get_rect(center=player)
                     p_rects.append(p_rect)
                     p_ids.append(player_id)
+                    
             
-             
             global req_msg 
             with lock:
                 req_msg.update({"GRASS_ACTION" : "", "KEY" : []})

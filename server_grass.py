@@ -5,6 +5,7 @@ import math
 import threading
 from grass import Grass, GrassTile, Wind, GRASS_WIDTH
 from gamehandler import GameClient, GameServer, game_grass
+from scripts.logger import get_logger_info
 from scripts.engine import Engine
 from scripts.camera import Follow
 from scripts.assets import Assets
@@ -38,10 +39,10 @@ class Window(Engine):
         self.delete = False
         self.world_pos = [0, 0]
         
-        self.players = {"SERVER" : self.world_pos}
+        self.players = {"SERVER" : {"POSITION" : self.world_pos}}
         self.id = ""
 
-        SERVER = GameServer("192.168.0.200", game=self)
+        SERVER = GameServer("192.168.0.191", game=self)
 
         thread = threading.Thread(target=SERVER.start)
         thread.start()
@@ -129,8 +130,10 @@ class Window(Engine):
             p_rects = []
             p_ids = []
 
-            for player_id, player in self.players.items():
+            for player_id, player in self.players.copy().items():
                 if player:
+                    # print("PLAYER DATA : ", player, "PLAYER_ID", player_id)
+                    get_logger_info("CORE", f'{player}')
                     p_rect = self.mouse_surf.get_rect(center=player)
                     p_rects.append(p_rect)
                     p_ids.append(player_id)

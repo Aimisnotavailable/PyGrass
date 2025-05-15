@@ -1,185 +1,213 @@
+"""
+game_handler.py
+
+Defines game-specific networking logic for the client and server.
+Message types include:
+  - "RPI": Request Player ID.
+  - "RPD": Request Player Data.
+  - "RGD": Request Grass Data.
+  - "RWD": Request Wind Data.
+"""
+
 import threading
 import json
-import random
 import socket
 from time import sleep
 from grass import Grass, GrassTile, GRASS_WIDTH
-from networkHandler import Client, Server, Stopper
+from network_handler import Client, Server, Stopper
 from scripts.logger import get_logger_info
-# from main import Window
 
+# Global variables for shared grass-related data
 lock = threading.Lock()
-game_grass : dict[str, GrassTile] = {}
-grass_to_render : dict[str, GrassTile] = {}
-req_msg : dict[str, dict] = {}
+game_grass: dict[str, GrassTile] = {}
+grass_to_render: dict[str, GrassTile] = {}
+req_msg: dict = {}  # Should be structured based on the client request
 
 class GameClient(Client):
-
-    def __init__(self, IP):
+    """
+    Client-side network handler for game data.
+    Uses distinct message types for player, grass, and wind data.
+    """
+    def __init__(self, IP: str):
         super().__init__(IP)
 
-    def __start_request__(self):
-        self.wait = True
-
-    def __await_okay_response__(self):
-        return self.receive_msg(self.client) == "OKAY"
-    
-    def request_world_data(self, game):
-
+    def request_world_data(self, game) -> None:
+        """
+        Continuously requests game data from the server.
+        You can extend this to include player and wind updates as needed.
+        """
         while True:
-            self.request_player_position_data(game)
+            # Request Grass Data (note: using message type "RGD")
             self.request_grass_position_data(game)
+            # Optionally add other requests:
+            self.request_player_position_data(game)
             self.request_wind_position_data(game)
-            get_logger_info('APP', "REQUEST SUCCESS", True)
+            get_logger_info('APP', "World data request successful", True)
+            sleep(0.05)  # Slight pause can help avoid overloading the network
 
-        
-    def request_played_id(self):
-        
-        msg = "REQUEST_PLAYER_ID"
-        msg = self.__await_reply__(self.socket, msg, s_type='APP')
-        
-        return msg
+    def request_played_id(self) -> str:
+        """
+        Requests a unique player ID from the server.
+        """
+        msg = json.dumps({'TYPE': "RPI", 'PAYLOAD': None})
+        self.send_msg(self.socket, msg, s_type='APP')
+        reply = self.receive_msg(self.socket)
+        return reply
 
-    def request_player_position_data(self, game):
-        msg = "REQUEST_POSITION_DATA" 
-        self.__await_reply__(self.socket, msg, s_type='APP')
-
-        msg = f'{game.world_pos}'
-        reply = self.__await_reply__(self.socket, msg, s_type='APP')
-
+    def request_player_position_data(self, game) -> None:
+        """
+        Sends the current player position (world position) to the server.
+        Expects the server to respond with all players' data.
+        """
+        payload = {'POSITION': game.world_pos}
+        msg = json.dumps({'TYPE': "RPD", 'PAYLOAD': payload})
+        self.send_msg(self.socket, msg, s_type='APP')
+        reply = self.receive_msg(self.socket)
         game.players = self.__deserialize_data__(reply)
 
-        self.send_msg(self.socket, "DONE")
-
-    def request_grass_position_data(self, game):
-        global req_msg
-        global grass_to_render
-
+    def request_grass_position_data(self, game) -> None:
+        """
+        Requests grass tile data from the server based on the current requirement.
+        Uses a separate message type "RGD" to avoid confusion with player data.
+        """
+        global req_msg, grass_to_render
         with lock:
-            msg  = "REQUEST_GRASS_DATA"
-            rp = self.__await_reply__(self.socket, msg, s_type='APP')
+            msg = json.dumps({'TYPE': "RGD", 'PAYLOAD': req_msg})
+            self.send_msg(self.socket, msg, s_type='APP')
+            reply = self.receive_msg(self.socket)
+            new_data = self.__deserialize_data__(reply)
+            # Merge new grass data into the global dictionary
+            grass_to_render.update(new_data)
 
-            reply = self.__await_reply__(self.socket, json.dumps(req_msg), s_type='APP')
-            self.send_msg(self.socket, "DONE")
-            
-            grass_to_render.update(self.__deserialize_data__(reply))
+    def request_wind_position_data(self, game) -> None:
+        """
+        Requests the current wind parameters from the server and updates the game.
+        """
+        msg = json.dumps({'TYPE': "RWD", 'PAYLOAD': None})
+        self.send_msg(self.socket, msg, s_type='APP')
+        reply = self.receive_msg(self.socket)
+        data = self.__deserialize_data__(reply)
+        # Update the game's wind: assume keys exist
+        game.wind.x_pos = data.get('WIND_POS', game.wind.x_pos)
+        game.wind.dir = data.get('WIND_DIRECTION', game.wind.dir)
+        game.wind.speed = data.get('WIND_SPEED', game.wind.speed)
 
-
-    def request_wind_position_data(self, game):
-
-        msg = "REQUEST_WIND_DATA"
-        reply = self.__await_reply__(self.socket, msg, s_type='APP')
-        reply = self.__deserialize_data__(reply)
-
-        game.wind.x_pos = reply['WIND_POS']
-        game.wind.dir = reply['WIND_DIRECTION']
-        game.wind.speed = reply['WIND_SPEED']
-
-    def __deserialize_data__(self, reply):
+    def __deserialize_data__(self, reply: str) -> dict:
+        """
+        Attempts to decode JSON data from the reply.
+        If decoding fails, logs the raw reply for debugging.
+        """
         try:
-            obj_data = json.loads(reply)
-        except:
-            with open("test.txt", "w+") as fp:
+            if reply:
+                return json.loads(reply)
+        except Exception as e:
+            with open("debug_raw_data.txt", "w+") as fp:
                 fp.write(reply)
-
-        return obj_data
+            get_logger_info('ERROR', f"Deserialization error: {e}", True)
+        return {}
 
 class GameServer(Server):
-
-    def __init__(self, IP, game):
+    """
+    Server-side network handler for game data.
+    Manages player connections, updates grass state, and sends wind data.
+    """
+    def __init__(self, IP: str, game):
         super().__init__(IP)
-        self.game = game
+        self.game = game  # Game should hold players, wind, etc.
     
-    def start(self):
+    def start(self) -> None:
+        """
+        Begins listening for client connections and spawns a new thread for each client.
+        """
         self.socket.listen()
-        
-        print(f"[LISTENING] Server is listening on {self.IP}")
+        get_logger_info('CORE', f"[LISTENING] Server is listening on {self.IP}")
 
-        client_count = -1
+        client_count = 0
         while True:
             try:
                 conn, addr = self.socket.accept()
-            
-                client_count += 1
-
                 client_id = self.__generate_id__(client_count)
-                self.game.players[client_id] = ""
-
-                thread = threading.Thread(target=self.handle_client, args=(conn, addr, client_id))
-                thread.start()
-
-                print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 2}")
+                # Initialize player's data in the game state
+                self.game.players[client_id] = {}
+                threading.Thread(target=self.handle_client, args=(conn, addr, client_id), daemon=True).start()
+                print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
+                client_count += 1
             except socket.timeout as e:
-                err = e.args[0]
-
-                if err == 'timed out':
-                    print("TIMED OUT")
+                # If a timeout occurs, simply continue listening
+                if e.args[0] == 'timed out':
                     continue
 
-    def __send_okay_response__(self, conn):
+    def __send_okay_response__(self, conn: socket.socket) -> None:
+        """Sends a simple acknowledgement message."""
         self.send_msg(conn, "OKAY")
 
-    def handle_client(self, conn, addr, client_id=""):
-        print(f"[NEW CONNECTION] {addr} connected.")
+    def handle_client(self, conn: socket.socket, addr: str, client_id: str = "") -> None:
+        """
+        Processes incoming messages from a single client.
+        Routes the request based on the message type.
+        """
+        print(f"[NEW CONNECTION] {addr} connected as {client_id}.")
         connected = True
 
         while connected:
-            
-            msg = self.receive_msg(conn)
+            try:
+                raw_msg = self.receive_msg(conn)
+            except ConnectionError:
+                break  # Stop processing if connection is lost
 
-            if msg:
-                # stopper = Stopper()
+            if raw_msg:
+                try:
+                    msg = json.loads(raw_msg)
+                except json.JSONDecodeError:
+                    continue
 
-                if msg == self.DISCONNECT_MESSAGE:
+                msg_type = msg.get('TYPE', '')
+                payload : dict[str, object] = msg.get('PAYLOAD', None)
+                
+                if msg_type == self.DISCONNECT_MESSAGE:
                     connected = False
                     break
 
-                if msg == "REQUEST_POSITION_DATA":
-                    msg = self.__await_reply__(conn, "RECEIVED")
+                elif msg_type == "RPD":
+                    # Update the player's position from the received payload.
+                    self.game.players[client_id] = payload['POSITION']
+                    reply = json.dumps(self.game.players)
+                    self.send_msg(conn, reply, s_type='RPD', debug=False)
 
-                    # self.send_msg(self.socket, "HEHE", None)
-                    
-                    self.game.players[client_id] = json.loads(msg)
-
-                    players = self.game.players.copy()
-
-                    reply = json.dumps(players)
-
-                    self.__await_reply__(conn, reply, debug=True)
-                
-                if msg == "REQUEST_GRASS_DATA":
-                    msg = self.__await_reply__(conn, "RECEIVED")
-                    
-                    msg = json.loads(msg)
-                    grass_msg = {}
-                    if msg:
+                elif msg_type == "RGD":
+                    # Process grass data requests:
+                    grass_reply = {}
+                    if payload:
                         with lock:
-                            if msg['GRASS_ACTION'] == 'ADD':
-                                if msg['GRASS_POS'] not in game_grass:
-                                    game_grass[msg['GRASS_POS']] = Grass(msg['GRASS_POS_INT'])
+                            if payload.get('GRASS_ACTION') == 'ADD':
+                                grass_pos = payload.get('GRASS_POS')
+                                grass_pos_int = payload.get('GRASS_POS_INT')
+                                if grass_pos and (grass_pos not in game_grass):
+                                    game_grass[grass_pos] = Grass(grass_pos_int)
                             else:
-                                for key in msg['KEY']:
+                                # For every requested key, if the grass exists send back its data.
+                                for key in payload.get('KEY', []):
                                     if key in game_grass:
-                                        grass_msg[key] = {"REPLY" : "EXIST", "GRASS_POS" : game_grass[key].pos, "GRASS_DATA" : list(game_grass[key].grass)}
-                            # else:
-                            #     for x in range(msg['BOUNDARY_X'][0], msg['BOUNDARY_X'][1]):
-                            #         for y in range(msg['BOUNDARY_Y'][0], msg['BOUNDARY_Y'][1]):
-                            #             key = f"{x} ; {y}"
-                            #             if key in game_grass:
-                            #                 grass_msg[key] = {"GRASS_POS" : game_grass[key].pos, "GRASS_TYPE" : game_grass[key].type}
-
-                    reply = json.dumps(grass_msg)
-                    self.__await_reply__(conn, reply)
-
-                if msg == "REQUEST_WIND_DATA":
-
-                    reply = json.dumps({"WIND_POS" : self.game.wind.x_pos, "WIND_DIRECTION" : self.game.wind.dir, "WIND_SPEED" : self.game.wind.speed})
-                    self.send_msg(conn, reply)
+                                        grass_tile = game_grass[key]
+                                        grass_reply[key] = {
+                                            "REPLY": "EXIST",
+                                            "GRASS_POS": grass_tile.pos,
+                                            "GRASS_DATA": list(grass_tile.grass)
+                                        }
+                    self.send_msg(conn, json.dumps(grass_reply))
                 
-                if msg == "REQUEST_PLAYER_ID":
+                elif msg_type == "RWD":
+                    wind_data = {
+                        "WIND_POS": self.game.wind.x_pos,
+                        "WIND_DIRECTION": self.game.wind.dir,
+                        "WIND_SPEED": self.game.wind.speed
+                    }
+                    self.send_msg(conn, json.dumps(wind_data))
+                
+                elif msg_type == "RPI":
+                    # When the client requests its player ID, send it back.
                     self.send_msg(conn, client_id)
-
+        
         conn.close()
+        print(f"[DISCONNECTED] {addr} disconnected.")
 
-    # def handle_client(self, conn, addr):
-    #     super().handle_client(conn, addr)

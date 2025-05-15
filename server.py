@@ -1,7 +1,7 @@
 import socket
 import threading
 import json
-from networkHandler import Server
+from network_handler import Server
 
 
 print("[STARTING] server is starting")

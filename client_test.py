@@ -1,5 +1,5 @@
-from networkHandler import Client
-from networkHandler import Server
+from network_handler import Client
+from network_handler import Server
 import random
 
 class TestClient(Client):

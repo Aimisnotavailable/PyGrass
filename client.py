@@ -1,5 +1,5 @@
 import socket
-from networkHandler import Client
+from network_handler import Client
 from obj import TestOBJ
 
 DISCONNECT_MESSAGE = "!DISCONNECT"

@@ -1,4 +1,4 @@
-from networkHandler import Server
+from network_handler import Server
 import threading
 import socket
 
