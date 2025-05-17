@@ -62,6 +62,10 @@ class NetworkHandler(ABC):
             conn.sendall(encoded_msg[i:i+self.HEADER])
         if debug:
             get_logger_info('CORE', f"[{s_type}] Sent message: {msg}")
+    
+    def generate_ip(self):
+        self.socket.connect(('8.8.8.8', 80))
+        return self.socket.getsockname()[0]
 
 class Stopper:
     """
@@ -75,7 +79,8 @@ class Server(NetworkHandler):
     Server class derived from NetworkHandler.
     Sets up the listening socket and provides a stub for handling clients.
     """
-    def __init__(self, IP: str):
+    def __init__(self):
+        IP = self.generate_ip()
         super().__init__(IP)
         self.__start_server__()
     
