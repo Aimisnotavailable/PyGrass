@@ -40,6 +40,8 @@ class Window(Engine):
         self.delete = False
         self.world_pos = [0, 0]
         
+        self.player_id = "SERVER"
+
         self.player = Player(self.world_pos, "SERVER", game=self, is_self=True)
         self.players = { self.player.id : {"POSITION" : self.player.pos}}
         
@@ -61,7 +63,7 @@ class Window(Engine):
         self.flip = 1
 
         self.wind = Wind(x_pos=self.display.get_width(), speed=300)
-        self.player_id = "SERVER"
+        
 
     def run(self):
         global game_grass 
@@ -91,9 +93,7 @@ class Window(Engine):
 
             render_scroll = (0, 0)
             # render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
-            self.mouse_surf = pygame.Surface((RADIUS * 2, RADIUS * 2))
-            m_rect = self.mouse_surf.get_rect(center=[mpos[0] + render_scroll[0], mpos[1] + render_scroll[1]])
-
+            
             if not int(self.force):
                 self.flip *= -1
                 self.force = 100 * self.flip
@@ -124,7 +124,7 @@ class Window(Engine):
                 with lock:
                     for x in range(0, int(RADIUS * 2)):
                         for y in range(0, int(RADIUS * 2)):
-                            pos = (m_rect[0] + x, m_rect[1] + y)
+                            pos = (self.player_obj[self.player_id].rect.centerx + x, self.player_obj[self.player_id].rect.centery + y)
                             g_pos = f"{pos[0]//GRASS_WIDTH} ; {pos[1]//GRASS_WIDTH}"
                             if g_pos not in game_grass:
                                 game_grass[g_pos] = GrassTile(((pos[0]//GRASS_WIDTH) * GRASS_WIDTH, (pos[1]//GRASS_WIDTH) * GRASS_WIDTH))

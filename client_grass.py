@@ -56,8 +56,6 @@ class Window(Engine):
         self.camera = Follow('Follow', 0.03)
 
         self.mouse_offset = [0, 0]
-
-        self.mouse_surf = pygame.Surface((RADIUS * 2, RADIUS * 2))
         self.flip = 1
 
         self.wind = Wind(x_pos=self.display.get_width(), speed=100)

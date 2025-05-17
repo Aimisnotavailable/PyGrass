@@ -1,6 +1,6 @@
 import pygame
 
-LERP_VALUE = 0.5
+LERP_VALUE = 0.1
 RADIUS = 20
 
 class Player:
@@ -11,7 +11,7 @@ class Player:
         self.id = id
         self.rect = pygame.Rect(*self.pos, RADIUS * 2, RADIUS * 2)
         self.is_self = is_self
-
+    
     def update(self, new_pos):
         self.pos = [self.__lerp__(self.pos[0], new_pos[0]), self.__lerp__(self.pos[1], new_pos[1])]
 
