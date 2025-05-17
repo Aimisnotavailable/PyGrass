@@ -40,10 +40,15 @@ class Window(Engine):
         self.delete = False
         self.world_pos = [0, 0]
 
-        pygame.display.set_caption("CLIENT")
-        self.players = {}
-        self.player_obj : dict[str, Player] = {}
-        self.id = ""
+        self.player_id = CLIENT.request_played_id()
+
+        pygame.display.set_caption(self.player_id)
+
+        
+        player = Player(self.world_pos, self.player_id, game=self, is_self=True)
+        self.players = { player.id : {"POSITION" : player.pos}}
+        self.player_obj : dict[str, Player] = { player.id : player }
+
         self.grass : dict[str:Grass] = {}
         
         self.world_boundary_x = [0, 0]
@@ -60,7 +65,7 @@ class Window(Engine):
 
         self.wind = Wind(x_pos=self.display.get_width(), speed=100)
         # CLIENT.request_wind_position_data(self)
-        self.player_id = CLIENT.request_played_id()
+        
         self.buffer = -0.1
 
         thread = threading.Thread(target=CLIENT.request_world_data, args=(self,))
@@ -100,6 +105,7 @@ class Window(Engine):
             mpos = [mpos[0] // 2, mpos[1] // 2]
 
             self.world_pos = [int(mpos[0] + self.mouse_offset[0]), int(mpos[1] + self.mouse_offset[1])]
+            self.players[self.player_id] = self.world_pos
 
             # if mpos[0] >= self.display.get_width() - 5:
             #     self.mouse_offset[0] += 100 * dt
@@ -112,7 +118,7 @@ class Window(Engine):
             #     self.mouse_offset[1] -= 300 * dt
             render_scroll = (0, 0)
             # render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
-            m_rect = self.mouse_surf.get_rect(center=[mpos[0] + render_scroll[0], mpos[1] + render_scroll[1]])
+            # m_rect = self.mouse_surf.get_rect(center=[mpos[0] + render_scroll[0], mpos[1] + render_scroll[1]])
 
             if not int(self.force):
                 self.flip *= -1

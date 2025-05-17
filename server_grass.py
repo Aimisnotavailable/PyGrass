@@ -41,11 +41,10 @@ class Window(Engine):
         self.world_pos = [0, 0]
         
         self.player_id = "SERVER"
+        player = Player(self.world_pos, self.player_id, game=self, is_self=True)
 
-        self.player = Player(self.world_pos, "SERVER", game=self, is_self=True)
-        self.players = { self.player.id : {"POSITION" : self.player.pos}}
-        
-        self.player_obj : dict[str, Player] = { self.player.id : self.player }
+        self.players = { player.id : {"POSITION" : player.pos}}
+        self.player_obj : dict[str, Player] = { player.id : player }
 
         self.id = ""
 
@@ -78,8 +77,7 @@ class Window(Engine):
             mpos = [mpos[0] // 2, mpos[1] // 2]
 
             self.world_pos = [int(mpos[0] + self.mouse_offset[0]), int(mpos[1] + self.mouse_offset[1])]
-            
-            self.players['SERVER'] = self.world_pos
+            self.players[self.player_id] = self.world_pos
 
             # if mpos[0] >= self.display.get_width() - 5:
             #     self.mouse_offset[0] += 100 * dt
