@@ -8,6 +8,8 @@ from gamehandler import GameClient, game_grass, grass_to_render, req_msg
 from scripts.engine import Engine
 from scripts.camera import Follow
 
+from scripts.player import Player
+
 RADIUS = 20
 
 RESISTANCE = 20
@@ -23,7 +25,7 @@ OFFSETS = [(0, 1),
            (1, -1),
            (-1,-1),]
 
-CLIENT = GameClient("192.168.0.191")
+CLIENT = GameClient("192.168.0.176")
 lock = threading.Lock()
 
 class Window(Engine): 
@@ -39,8 +41,8 @@ class Window(Engine):
         self.world_pos = [0, 0]
 
         pygame.display.set_caption("CLIENT")
-
         self.players = {}
+        self.player_obj : dict[str, Player] = {}
         self.id = ""
         self.grass : dict[str:Grass] = {}
         
@@ -143,15 +145,18 @@ class Window(Engine):
 
             
             p_rects = []
-            p_ids = []
 
-            for player_id, player in self.players.items():
-                # print(self.players.items)
-                if player:
-                    # print("PLAYER DATA : ", player)
-                    p_rect = self.mouse_surf.get_rect(center=player)
-                    p_rects.append(p_rect)
-                    p_ids.append(player_id)
+            for player_id, player_pos in self.players.copy().items():
+                if player_pos:
+                    # print("PLAYER DATA : ", player, "PLAYER_ID", player_id)
+                    # get_logger_info("CORE", f'{player}')
+                    if not player_id in self.player_obj:
+                        self.player_obj[player_id] = Player(player_pos, player_id, game=self, is_self=(self.player_id == player_id))
+                    
+                    player = self.player_obj[player_id]
+
+                    player.update(player_pos)
+                    p_rects.append(player.rect)
                     
             
             global req_msg 
@@ -219,11 +224,8 @@ class Window(Engine):
                 self.force = min(0, self.force - (self.force * dt))
 
             
-            for player_id, p_rect in zip(p_ids, p_rects):
-                pygame.draw.circle(self.display, (255, 255, 255), (p_rect.center[0] - self.mouse_offset[0], p_rect.center[1] - self.mouse_offset[1]) , RADIUS, 1)
-                id_surf = self.font.render(player_id, True, (0, 0, 0) if self.player_id != player_id else (255, 255, 255))
-                id_rect = id_surf.get_rect(center=(p_rect.centerx, p_rect.bottom))
-                self.display.blit(id_surf, id_rect)
+            for player_id in self.player_obj:
+                self.player_obj[player_id].render(self.display, render_scroll)
 
             display_mask = pygame.mask.from_surface(self.display)
             display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 0), unsetcolor=(0, 0, 0, 0))

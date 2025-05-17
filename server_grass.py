@@ -9,6 +9,7 @@ from scripts.logger import get_logger_info
 from scripts.engine import Engine
 from scripts.camera import Follow
 from scripts.assets import Assets
+from scripts.player import Player
 
 RADIUS = 20
 
@@ -39,7 +40,11 @@ class Window(Engine):
         self.delete = False
         self.world_pos = [0, 0]
         
-        self.players = {"SERVER" : {"POSITION" : self.world_pos}}
+        self.player = Player(self.world_pos, "SERVER", game=self, is_self=True)
+        self.players = { self.player.id : {"POSITION" : self.player.pos}}
+        
+        self.player_obj : dict[str, Player] = { self.player.id : self.player }
+
         self.id = ""
 
         SERVER = GameServer(game=self)
@@ -53,7 +58,6 @@ class Window(Engine):
 
         self.mouse_offset = [0, 0]
 
-        self.mouse_surf = pygame.Surface((RADIUS * 2, RADIUS * 2))
         self.flip = 1
 
         self.wind = Wind(x_pos=self.display.get_width(), speed=300)
@@ -87,6 +91,7 @@ class Window(Engine):
 
             render_scroll = (0, 0)
             # render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
+            self.mouse_surf = pygame.Surface((RADIUS * 2, RADIUS * 2))
             m_rect = self.mouse_surf.get_rect(center=[mpos[0] + render_scroll[0], mpos[1] + render_scroll[1]])
 
             if not int(self.force):
@@ -128,16 +133,18 @@ class Window(Engine):
             # self.wind.render(self.display, render_scroll)
 
             p_rects = []
-            p_ids = []
-
-            for player_id, player in self.players.copy().items():
-                if player:
+            for player_id, player_pos in self.players.copy().items():
+                if player_pos:
                     # print("PLAYER DATA : ", player, "PLAYER_ID", player_id)
-                    get_logger_info("CORE", f'{player}')
-                    p_rect = self.mouse_surf.get_rect(center=player)
-                    p_rects.append(p_rect)
-                    p_ids.append(player_id)
+                    # get_logger_info("CORE", f'{player}')
+                    if not player_id in self.player_obj:
+                        self.player_obj[player_id] = Player(player_pos, player_id, game=self, is_self=(self.player_id == player_id))
                     
+                    player = self.player_obj[player_id]
+
+                    player.update(player_pos)
+                    p_rects.append(player.rect)
+            
             with lock:
                 for x in range(world_boundary_x[0], world_boundary_x[1]):
                     for y in range(world_boundary_y[0], world_boundary_y[1]):
@@ -166,7 +173,10 @@ class Window(Engine):
                             
                             grass_tile.update(dt, wind_force=wind_force)
                             grass_tile.render(self.display, render_scroll=render_scroll)
-                            
+
+            for player_id in self.player_obj:
+                self.player_obj[player_id].render(self.display, render_scroll)
+
             self.display.blit(self.font.render(f"{self.world_pos}", True, (0, 0, 0)), (0, 0))
             self.display.blit(self.font.render(f"FPS: {1//dt}", True, (0, 0, 0)), (200, 0))
 
@@ -175,12 +185,6 @@ class Window(Engine):
             elif self.force < 0:
                 self.force = min(0, self.force - (self.force * dt))
             
-            for player_id, p_rect in zip(p_ids, p_rects):
-                pygame.draw.circle(self.display, (255, 255, 255), (p_rect.center[0] - self.mouse_offset[0], p_rect.center[1] - self.mouse_offset[1]) , RADIUS, 1)
-                id_surf = self.font.render(player_id, True, (0, 0, 0) if self.player_id != player_id else (255, 255, 255))
-                id_rect = id_surf.get_rect(center=(p_rect.centerx, p_rect.bottom))
-                self.display.blit(id_surf, id_rect)
-
             display_mask = pygame.mask.from_surface(self.display)
             display_sillhouette = display_mask.to_surface(setcolor=(0, 0, 0, 0), unsetcolor=(0, 0, 0, 0))
 

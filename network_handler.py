@@ -18,7 +18,7 @@ class NetworkHandler(ABC):
     """
     Abstract base class for network handlers.
     """
-    def __init__(self, IP: str):
+    def __init__(self, IP: str = ''):
         self.IP: str = IP
         self.PORT: int = 5050
         self.ADDR = (self.IP, self.PORT)
@@ -27,7 +27,7 @@ class NetworkHandler(ABC):
         self.DISCONNECT_MESSAGE: str = "!DISCONNECT"
         # For keeping track of connected sockets (if needed)
         self.players: dict[str, socket.socket] = {}
-        self.socket: socket.socket = None
+        self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def _recv_all(self, conn: socket.socket, length: int) -> bytes:
         """Receive exactly 'length' bytes from the socket."""
@@ -63,9 +63,14 @@ class NetworkHandler(ABC):
         if debug:
             get_logger_info('CORE', f"[{s_type}] Sent message: {msg}")
     
-    def generate_ip(self):
-        self.socket.connect(('8.8.8.8', 80))
-        return self.socket.getsockname()[0]
+    def __get_local_ip__(self) -> str:
+        """ Retrieves the local IP address by establishing a temporary connection. """
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.connect(("8.8.8.8", 80))  # Google's public DNS server (doesn't actually send data)
+                return s.getsockname()[0]
+        except socket.error:
+            return "127.0.0.1"  # Fallback to localhost
 
 class Stopper:
     """
@@ -80,14 +85,16 @@ class Server(NetworkHandler):
     Sets up the listening socket and provides a stub for handling clients.
     """
     def __init__(self):
-        IP = self.generate_ip()
-        super().__init__(IP)
+        super().__init__()
         self.__start_server__()
     
     def __start_server__(self, timeout: float = 0.1):
         """Create and bind the server socket."""
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        self.IP = self.__get_local_ip__()
+        self.ADDR = (self.IP, self.PORT)
         self.socket.bind(self.ADDR)
+
         # Optionally set a timeout if desired:
         # self.socket.settimeout(timeout)
 
@@ -120,7 +127,6 @@ class Client(NetworkHandler):
     
     def __connect__(self, timeout: float = 0.1) -> None:
         """Create and connect the client socket."""
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect(self.ADDR)
         # Optionally set a timeout if desired:
         # self.socket.settimeout(timeout)

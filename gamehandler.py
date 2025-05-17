@@ -42,7 +42,7 @@ class GameClient(Client):
             # Optionally add other requests:
             self.request_player_position_data(game)
             self.request_wind_position_data(game)
-            get_logger_info('APP', "World data request successful", True)
+            # get_logger_info('APP', "World data request successful", True)
             sleep(0.05)  # Slight pause can help avoid overloading the network
 
     def request_played_id(self) -> str:
@@ -61,8 +61,10 @@ class GameClient(Client):
         """
         payload = {'POSITION': game.world_pos}
         msg = json.dumps({'TYPE': "RPD", 'PAYLOAD': payload})
+
         self.send_msg(self.socket, msg, s_type='APP')
         reply = self.receive_msg(self.socket)
+
         game.players = self.__deserialize_data__(reply)
 
     def request_grass_position_data(self, game) -> None:
@@ -111,8 +113,8 @@ class GameServer(Server):
     Server-side network handler for game data.
     Manages player connections, updates grass state, and sends wind data.
     """
-    def __init__(self, IP: str, game):
-        super().__init__(IP)
+    def __init__(self, game):
+        super().__init__()
         self.game = game  # Game should hold players, wind, etc.
     
     def start(self) -> None:
@@ -120,7 +122,7 @@ class GameServer(Server):
         Begins listening for client connections and spawns a new thread for each client.
         """
         self.socket.listen()
-        get_logger_info('CORE', f"[LISTENING] Server is listening on {self.IP}")
+        get_logger_info('CORE', f"[LISTENING] Server is listening on {self.ADDR}")
 
         client_count = 0
         while True:
@@ -171,6 +173,7 @@ class GameServer(Server):
                 elif msg_type == "RPD":
                     # Update the player's position from the received payload.
                     self.game.players[client_id] = payload['POSITION']
+                    
                     reply = json.dumps(self.game.players)
                     self.send_msg(conn, reply, s_type='RPD', debug=False)
 
