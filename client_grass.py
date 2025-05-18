@@ -30,12 +30,12 @@ lock = threading.Lock()
 
 class Window(Engine): 
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dim):
+        super().__init__(dim=dim)
 
         pygame.mouse.set_visible(False)
 
-        self.display_2 = pygame.Surface((300, 200))
+        self.display_2 = pygame.Surface(self.display.get_size())
         self.insert = False
         self.delete = False
         self.world_pos = [0, 0]
@@ -245,4 +245,4 @@ class Window(Engine):
             pygame.display.update()
             # self.clock.tick(60)
 
-Window().run()
+Window((1600, 900)).run()

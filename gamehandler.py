@@ -42,7 +42,7 @@ class GameClient(Client):
             # Optionally add other requests:
             self.request_player_position_data(game)
             self.request_wind_position_data(game)
-            # get_logger_info('APP', "World data request successful", True)
+            get_logger_info('APP', "World data request successful", True)
             sleep(0.05)  # Slight pause can help avoid overloading the network
 
     def request_played_id(self) -> str:
@@ -81,6 +81,8 @@ class GameClient(Client):
             # Merge new grass data into the global dictionary
             grass_to_render.update(new_data)
 
+        get_logger_info('APP', f'Successfully grass request total size {len(new_data)}')
+        
     def request_wind_position_data(self, game) -> None:
         """
         Requests the current wind parameters from the server and updates the game.
