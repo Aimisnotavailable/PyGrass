@@ -18,9 +18,9 @@ class NetworkHandler(ABC):
     """
     Abstract base class for network handlers.
     """
-    def __init__(self, IP: str = ''):
+    def __init__(self, IP: str = '', port=5050):
         self.IP: str = IP
-        self.PORT: int = 5050
+        self.PORT: int = port
         self.ADDR = (self.IP, self.PORT)
         self.HEADER: int = 10         # Maximum chunk size for send/receive
         self.FORMAT: str = "utf-8"
@@ -91,7 +91,7 @@ class Server(NetworkHandler):
     def __start_server__(self, timeout: float = 0.1):
         """Create and bind the server socket."""
 
-        self.IP = self.__get_local_ip__()
+        self.IP = '0.0.0.0' # self.__get_local_ip__()
         self.ADDR = (self.IP, self.PORT)
         self.socket.bind(self.ADDR)
 
@@ -121,8 +121,8 @@ class Client(NetworkHandler):
     Client class derived from NetworkHandler.
     Connects to the server upon initialization.
     """
-    def __init__(self, IP: str):
-        super().__init__(IP)
+    def __init__(self, IP: str, port=5050):
+        super().__init__(IP, port)
         self.__connect__()
     
     def __connect__(self, timeout: float = 0.1) -> None:

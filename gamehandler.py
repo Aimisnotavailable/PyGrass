@@ -28,8 +28,8 @@ class GameClient(Client):
     Client-side network handler for game data.
     Uses distinct message types for player, grass, and wind data.
     """
-    def __init__(self, IP: str):
-        super().__init__(IP)
+    def __init__(self, IP: str, port=5050):
+        super().__init__(IP, port)
 
     def request_world_data(self, game) -> None:
         """

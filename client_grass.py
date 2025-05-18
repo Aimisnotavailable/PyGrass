@@ -25,7 +25,7 @@ OFFSETS = [(0, 1),
            (1, -1),
            (-1,-1),]
 
-CLIENT = GameClient("192.168.0.176")
+CLIENT = GameClient("0.tcp.ap.ngrok.io", port=11516)
 lock = threading.Lock()
 
 class Window(Engine): 
