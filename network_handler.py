@@ -19,10 +19,11 @@ class NetworkHandler(ABC):
     Abstract base class for network handlers.
     """
     def __init__(self, IP: str = '', port=5050):
+        
         self.IP: str = IP
         self.PORT: int = port
         self.ADDR = (self.IP, self.PORT)
-        self.HEADER: int = 10         # Maximum chunk size for send/receive
+        self.HEADER: int = 60        # Maximum chunk size for send/receive
         self.FORMAT: str = "utf-8"
         self.DISCONNECT_MESSAGE: str = "!DISCONNECT"
         # For keeping track of connected sockets (if needed)

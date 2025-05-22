@@ -18,10 +18,10 @@ class Player:
     def render(self, surf : pygame.Surface, offset=[0, 0]):
 
         self.rect.center = self.pos
-        pygame.draw.circle(surf, (255, 255, 255), self.rect.center, RADIUS, 1)
+        pygame.draw.circle(surf, (255, 255, 255), (self.rect.center[0] - offset[0], self.rect.center[1] - offset[1]), RADIUS, 1)
 
         id_surf = self.game.font.render(self.id, True, (0, 0, 0) if self.is_self else (255, 255, 255))
-        id_rect = id_surf.get_rect(center=(self.rect.centerx, self.rect.bottom))
+        id_rect = id_surf.get_rect(center=(self.rect.centerx - offset[0], self.rect.bottom - offset[1]))
         surf.blit(id_surf, id_rect)
 
     def __lerp__(self, start, end):

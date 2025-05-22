@@ -3,6 +3,7 @@ import sys
 import random
 import math
 import threading
+import screeninfo
 from grass import Grass, GrassTile, Wind, GRASS_WIDTH
 from gamehandler import GameClient, GameServer, game_grass
 from scripts.logger import get_logger_info
@@ -79,15 +80,15 @@ class Window(Engine):
             self.world_pos = [int(mpos[0] + self.mouse_offset[0]), int(mpos[1] + self.mouse_offset[1])]
             self.players[self.player_id] = self.world_pos
 
-            # if mpos[0] >= self.display.get_width() - 5:
-            #     self.mouse_offset[0] += 100 * dt
-            # elif mpos[0] <= 5:
-            #     self.mouse_offset[0] -= 100 * dt
+            if mpos[0] >= self.display.get_width() - 5:
+                self.mouse_offset[0] += 100 * dt
+            elif mpos[0] <= 5:
+                self.mouse_offset[0] -= 100 * dt
 
-            # if mpos[1] >= self.display.get_height() - 5:
-            #     self.mouse_offset[1] += 300 * dt
-            # elif mpos[1] <= 5:
-            #     self.mouse_offset[1] -= 300 * dt
+            if mpos[1] >= self.display.get_height() - 5:
+                self.mouse_offset[1] += 300 * dt
+            elif mpos[1] <= 5:
+                self.mouse_offset[1] -= 300 * dt
 
             render_scroll = (0, 0)
             # render_scroll = self.camera.scroll(self.display, dt, (mpos[0] + self.mouse_offset[0], mpos[1] + self.mouse_offset[1]))
@@ -115,8 +116,8 @@ class Window(Engine):
                         self.delete = False
 
             # WORLD GRID POSITIONS
-            world_boundary_x = [render_scroll[0] // GRASS_WIDTH - 2, (render_scroll[0] + self.display.get_width()) // GRASS_WIDTH + 2]
-            world_boundary_y = [render_scroll[1] // GRASS_WIDTH - 2, (render_scroll[1] + self.display.get_height()) // GRASS_WIDTH + 2]
+            world_boundary_x = [self.mouse_offset[0] // GRASS_WIDTH - 2, (self.mouse_offset[0] + self.display.get_width()) // GRASS_WIDTH + 2]
+            world_boundary_y = [self.mouse_offset[1] // GRASS_WIDTH - 2, (self.mouse_offset[1] + self.display.get_height()) // GRASS_WIDTH + 2]
 
             if self.insert:
                 with lock:
@@ -144,8 +145,8 @@ class Window(Engine):
                     p_rects.append(player.rect)
             
             with lock:
-                for x in range(world_boundary_x[0], world_boundary_x[1]):
-                    for y in range(world_boundary_y[0], world_boundary_y[1]):
+                for x in range(int(world_boundary_x[0]), int(world_boundary_x[1])):
+                    for y in range(int(world_boundary_y[0]), int(world_boundary_y[1])):
                         g_pos = f"{x} ; {y}"
                         
                         if g_pos in game_grass:
@@ -170,10 +171,10 @@ class Window(Engine):
                                         grass.set_touch_rot(dir, dt)
                             
                             grass_tile.update(dt, wind_force=wind_force)
-                            grass_tile.render(self.display, render_scroll=render_scroll)
+                            grass_tile.render(self.display, render_scroll=self.mouse_offset)
 
             for player_id in self.player_obj:
-                self.player_obj[player_id].render(self.display, render_scroll)
+                self.player_obj[player_id].render(self.display, self.mouse_offset)
 
             self.display.blit(self.font.render(f"{self.world_pos}", True, (0, 0, 0)), (0, 0))
             self.display.blit(self.font.render(f"FPS: {1//dt}", True, (0, 0, 0)), (200, 0))
@@ -196,4 +197,5 @@ class Window(Engine):
             
             # self.clock.tick(60)
 
-Window((1600, 900)).run()
+dim = (screeninfo.get_monitors()[0].width - 100, screeninfo.get_monitors()[0].height-100)
+Window(dim).run()
